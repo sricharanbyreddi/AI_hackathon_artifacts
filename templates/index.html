@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Solution Showcase</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark.min.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-icon">AI</div><div><h1>Solution Showcase</h1><p>Client Presentation Workspace</p></div></div>
+  <div class="status"><span class="status-dot"></span> Document Library</div>
+</header>
+<main class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-heading"><h2>Documents</h2><span class="count">{{ documents|length }}</span></div>
+    <p class="sidebar-description">Select a document to explore its contents.</p>
+    <div class="document-list">
+    {% for doc in documents %}
+      <button type="button" class="document-button" data-id="{{ doc.id }}" title="{{ doc.filename }}">
+        <span class="file-icon">{% if doc.filename.lower().endswith('.pdf') %}PDF{% elif doc.filename.lower().endswith('.docx') %}DOC{% elif doc.filename.lower().endswith(('.md', '.markdown')) %}MD{% else %}TXT{% endif %}</span>
+        <span class="file-name">{{ doc.name }}</span><span class="arrow">›</span>
+      </button>
+    {% endfor %}
+    </div>
+    {% if not documents %}<div class="empty-sidebar"><p>No supported documents found.</p><p>Add PDF, DOCX, MD, Markdown, or TXT files to <code>uploads</code>, then refresh.</p></div>{% endif %}
+  </aside>
+  <section class="viewer">
+    <div class="viewer-toolbar"><div><p class="eyebrow">DOCUMENT PREVIEW</p><h2 id="document-title">Welcome to the Showcase</h2></div><span id="document-type" class="document-type">READY</span></div>
+    <div id="welcome" class="welcome"><div class="welcome-icon">✦</div><h2>Your solution, all in one place.</h2><p>Choose a document from the left panel to view its formatted contents here.</p></div>
+    <div id="loading" class="loading" hidden>Loading document…</div>
+    <div id="error-message" class="error-message" hidden>Unable to load this document. Please check the server.</div>
+    <article id="document-content" hidden></article>
+  </section>
+</main>
+<footer>AI Solution Showcase <span>·</span> Local Preview</footer>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

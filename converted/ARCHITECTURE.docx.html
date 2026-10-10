@@ -1,0 +1,560 @@
+<p>ARCHITECTURE</p>
+<h1 id="enterprise-architecture-document"><strong>Enterprise Architecture Document</strong></h1>
+<p><strong>Project:</strong> <em>Spendid_project</em> – Brokerage Finance Operations Command Center<br>
+<strong>Industry:</strong> Insurance – Brokerage Finance<br>
+<strong>Version:</strong> 1.0 – 2026‑10‑10<br>
+<strong>Prepared by:</strong> Enterprise Architecture Team (EA, BA, SA, SecArch, UI/UX, QA, AI‑Transformation)  </p>
+<hr>
+<h2 id="1-document-overview">1. Document Overview</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1.0</strong></td>
+<td>Document purpose, scope and conventions</td>
+</tr>
+<tr>
+<td><strong>2.0</strong></td>
+<td>Governance, compliance, and risk‑management framework</td>
+</tr>
+<tr>
+<td><strong>3.0</strong></td>
+<td>Non‑functional requirements (NFR) – security, scalability, auditability, etc.</td>
+</tr>
+<tr>
+<td><strong>4.0</strong></td>
+<td><strong>Application Architecture</strong> – logical components, AI/agent flow, UI layers</td>
+</tr>
+<tr>
+<td><strong>5.0</strong></td>
+<td><strong>Technical Architecture</strong> – platform stack, runtime, observability</td>
+</tr>
+<tr>
+<td><strong>6.0</strong></td>
+<td><strong>Integration Architecture</strong> – inbound/outbound interfaces, data‑exchange patterns</td>
+</tr>
+<tr>
+<td><strong>7.0</strong></td>
+<td><strong>Security Architecture</strong> – identity, data protection, secure AI usage</td>
+</tr>
+<tr>
+<td><strong>8.0</strong></td>
+<td><strong>Deployment Architecture</strong> – environments, CI/CD pipeline, multi‑region scaling</td>
+</tr>
+<tr>
+<td><strong>9.0</strong></td>
+<td>Architecture diagrams (Mermaid)</td>
+</tr>
+<tr>
+<td><strong>10.0</strong></td>
+<td>References &amp; tool‑selection rationale</td>
+</tr>
+</tbody>
+</table></div>
+<p>All diagrams are expressed in <strong>Mermaid</strong> syntax to enable version‑controlled, reproducible visual artefacts.</p>
+<hr>
+<h2 id="2-governance-compliance-risk-management">2. Governance, Compliance &amp; Risk Management</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Policy / Standard</th>
+<th>Owner</th>
+<th>Enforcement Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Enterprise Architecture Governance</strong></td>
+<td>TOGAF ADM, ArchiMate 3.1</td>
+<td>Chief Enterprise Architect</td>
+<td>Architecture Review Board (ARB) – quarterly</td>
+</tr>
+<tr>
+<td><strong>Data Privacy &amp; Protection</strong></td>
+<td>GDPR, CCPA, ISO‑27001 Annex A.15</td>
+<td>Data Protection Officer (DPO)</td>
+<td>Data‑flow impact analysis, DLP, encryption‑at‑rest &amp; in‑transit</td>
+</tr>
+<tr>
+<td><strong>Financial Controls</strong></td>
+<td>SOX §404, ICAAP, internal audit charter</td>
+<td>CFO / Finance Controls Lead</td>
+<td>Segregation‑of‑duties (SoD) matrix, immutable audit log</td>
+</tr>
+<tr>
+<td><strong>AI Governance</strong></td>
+<td>Responsible AI Framework (IBM, EU AI Act draft)</td>
+<td>AI Ethics Officer</td>
+<td>Prompt‑registry, model‑card, confidence‑threshold enforcement, human‑in‑the‑loop</td>
+</tr>
+<tr>
+<td><strong>Change Management</strong></td>
+<td>ITIL Change Management v4</td>
+<td>Change Manager</td>
+<td>CI/CD gate‑checks, automated policy compliance scans</td>
+</tr>
+<tr>
+<td><strong>Incident Response</strong></td>
+<td>NIST 800‑61 Rev.2</td>
+<td>Security Operations Center (SOC)</td>
+<td>SIEM alerts, automated playbooks, post‑mortem reviews</td>
+</tr>
+<tr>
+<td><strong>Vendor &amp; Tool Approval</strong></td>
+<td>Enterprise‑Approved Tool List (EATL)</td>
+<td>Procurement Lead</td>
+<td>Procurement workflow + security vetting checklist</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Compliance Scope</strong> – The solution must satisfy <strong>SOX</strong>, <strong>GDPR/CCPA</strong>, <strong>PCI‑DSS</strong> (where payment data is processed), and the <strong>EU AI Act</strong> (risk‑based classification). All logs are retained for <strong>7 years</strong> (financial) and <strong>2 years</strong> (AI‑model usage) per regulatory mandates.</p>
+</blockquote>
+<hr>
+<h2 id="3-nonfunctional-requirements-nfr">3. Non‑Functional Requirements (NFR)</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Requirement</th>
+<th>Metric / Acceptance Criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Performance</strong></td>
+<td>End‑to‑end response ≤ 2 s for dashboard queries; ≤ 500 ms for AI‑copilot answer</td>
+<td>Load‑test 10 k concurrent users, 95th percentile</td>
+</tr>
+<tr>
+<td><strong>Scalability</strong></td>
+<td>Horizontal scaling to 5× peak load (≈ 50 k concurrent sessions)</td>
+<td>Auto‑scale policies in Kubernetes</td>
+</tr>
+<tr>
+<td><strong>Availability</strong></td>
+<td>99.9 % SLA (≤ 43 min downtime/month)</td>
+<td>Multi‑AZ deployment, health‑checks, fail‑over</td>
+</tr>
+<tr>
+<td><strong>Security</strong></td>
+<td>Zero‑trust network, least‑privilege IAM, encryption TLS 1.3, AES‑256 at rest</td>
+<td>Pen‑test OWASP Top 10, SOC‑2 Type II audit</td>
+</tr>
+<tr>
+<td><strong>Auditability</strong></td>
+<td>Immutable append‑only audit trail for every financial transaction, AI decision, and user action</td>
+<td>WORM storage, hash‑chained logs, tamper‑evidence</td>
+</tr>
+<tr>
+<td><strong>Observability</strong></td>
+<td>Full‑stack metrics, distributed tracing, log aggregation, alerting</td>
+<td>Prometheus + Grafana, OpenTelemetry, ELK</td>
+</tr>
+<tr>
+<td><strong>Maintainability</strong></td>
+<td>Code coverage ≥ 85 %; modular micro‑service design; CI lint &amp; static analysis</td>
+<td>SonarQube, Semgrep</td>
+</tr>
+<tr>
+<td><strong>Compliance</strong></td>
+<td>Data residency: US‑East &amp; EU‑West; token‑level AI usage captured</td>
+<td>Data‑location tags, token‑omics register</td>
+</tr>
+<tr>
+<td><strong>Disaster Recovery</strong></td>
+<td>RPO ≤ 15 min, RTO ≤ 30 min</td>
+<td>Geo‑replicated backups, automated fail‑over drills</td>
+</tr>
+<tr>
+<td><strong>Usability</strong></td>
+<td>Persona‑driven UI with WCAG 2.1 AA compliance</td>
+<td>Accessibility audit, user‑testing score ≥ 4.5/5</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="4-application-architecture">4. Application Architecture</h2>
+<h3 id="41-highlevel-logical-view">4.1 High‑Level Logical View</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Primary Responsibilities</th>
+<th>Key Services / Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Presentation</strong></td>
+<td>Multi‑persona UI, responsive web, Copilot chat UI</td>
+<td>React‑TS SPA, Figma‑derived component library, Streamlit/Gradio <strong>Copilot</strong> widget</td>
+</tr>
+<tr>
+<td><strong>API Gateway</strong></td>
+<td>Secure entry point, request routing, rate‑limiting, auth enforcement</td>
+<td>Kong Enterprise (or Azure API Management)</td>
+</tr>
+<tr>
+<td><strong>Domain Services</strong></td>
+<td>Finance‑journey engine, Exception‑Workbench, Ledger, Forecasting, Reporting</td>
+<td>- <strong>FinanceJourneyService</strong> (state machine, BPMN) <br> - <strong>ExceptionService</strong> (AI‑classification, clustering) <br> - <strong>LedgerService</strong> (synthetic ledger, double‑entry) <br> - <strong>ForecastService</strong> (time‑series, Prophet)</td>
+</tr>
+<tr>
+<td><strong>AI/Agent Layer</strong></td>
+<td>LLM‑driven Copilot, classification models, token‑omics tracker</td>
+<td>LangChain orchestrator, Azure OpenAI gpt‑4o‑mini (for low‑latency), fine‑tuned proprietary model for finance‑specific taxonomy</td>
+</tr>
+<tr>
+<td><strong>Data Access</strong></td>
+<td>Repository pattern, transaction boundaries, audit logging</td>
+<td>Spring Data JPA / TypeORM, PostgreSQL, Redis cache</td>
+</tr>
+<tr>
+<td><strong>Infrastructure Services</strong></td>
+<td>Messaging, job scheduling, secrets, observability</td>
+<td>Kafka, Celery/Sidekiq, HashiCorp Vault, OpenTelemetry, Prometheus</td>
+</tr>
+<tr>
+<td><strong>Security Services</strong></td>
+<td>IAM, RBAC, SoD enforcement, encryption key management</td>
+<td>Keycloak (OIDC), OPA (Open Policy Agent) for policy enforcement</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42-component-diagram-mermaid">4.2 Component Diagram (Mermaid)</h3>
+<pre><code class="language-mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;, &#x27;themeVariables&#x27;:{&#x27;primaryColor&#x27;:&#x27;#003366&#x27;,&#x27;secondaryColor&#x27;:&#x27;#006699&#x27;,&#x27;borderRadius&#x27;:&#x27;5px&#x27;}}}%%
+graph TD
+    subgraph UI[&quot;Presentation Layer&quot;]
+        UI_SP[SPA (React/TS)]
+        UI_COP[Copilot Widget (Streamlit)]
+    end
+
+    subgraph GW[&quot;API Gateway&quot;]
+        GW_Kong[Kong Enterprise]
+    end
+
+    subgraph DS[&quot;Domain Services&quot;]
+        DS_Journey[FinanceJourneyService]
+        DS_Exception[ExceptionService]
+        DS_Ledger[LedgerService]
+        DS_Forecast[ForecastService]
+        DS_Report[ReportingService]
+    end
+
+    subgraph AI[&quot;AI/Agent Layer&quot;]
+        AI_Orch[LangChain Orchestrator]
+        AI_Cls[Classification Model (Azure OpenAI)]
+        AI_Fore[Forecast Model (Prophet + LLM)]
+        AI_Tok[Tokenomics Tracker]
+    end
+
+    subgraph DB[&quot;Data Stores&quot;]
+        DB_PG[(PostgreSQL)]
+        DB_Redis[(Redis Cache)]
+        DB_Elastic[(ElasticSearch)]
+        DB_Vault[(HashiCorp Vault)]
+    end
+
+    subgraph Infra[&quot;Infrastructure Services&quot;]
+        INF_Kafka[Kafka]
+        INF_Celery[Celery Workers]
+        INF_Obs[OpenTelemetry / Prometheus]
+    end
+
+    subgraph Sec[&quot;Security Services&quot;]
+        Sec_Keycloak[Keycloak OIDC]
+        Sec_OPA[OPA Policy Engine]
+    end
+
+    UI_SP --&gt; GW_Kong
+    UI_COP --&gt; GW_Kong
+    GW_Kong --&gt; Sec_Keycloak
+    Sec_Keycloak --&gt; Sec_OPA
+    GW_Kong --&gt; DS_Journey
+    GW_Kong --&gt; DS_Exception
+    GW_Kong --&gt; DS_Ledger
+    GW_Kong --&gt; DS_Forecast
+    GW_Kong --&gt; DS_Report
+
+    DS_Journey --&gt; DB_PG
+    DS_Exception --&gt; DB_PG
+    DS_Ledger --&gt; DB_PG
+    DS_Forecast --&gt; DB_PG
+    DS_Report --&gt; DB_Elastic
+
+    DS_Exception --&gt; AI_Orch
+    AI_Orch --&gt; AI_Cls
+    AI_Orch --&gt; AI_Fore
+    AI_Orch --&gt; AI_Tok
+
+    AI_Cls --&gt; DB_PG
+    AI_Fore --&gt; DB_PG
+
+    DS_Journey --&gt; INF_Kafka
+    DS_Exception --&gt; INF_Kafka
+    INF_Kafka --&gt; INF_Celery
+    INF_Celery --&gt; AI_Orch
+
+    DB_Vault --&gt; Sec_Keycloak
+    DB_Vault --&gt; AI_Orch
+
+    INF_Obs --&gt; DB_PG
+    INF_Obs --&gt; DB_Elastic
+    INF_Obs --&gt; AI_Orch</code></pre>
+<h3 id="43-aiagent-interaction-flow-sequence-diagram">4.3 AI/Agent Interaction Flow (Sequence Diagram)</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant User as Finance Operator (CFO)
+    participant UI as Web UI (React)
+    participant GW as API Gateway
+    participant Auth as Keycloak
+    participant Cop as Copilot Widget (Streamlit)
+    participant Orchestrator as LangChain Orchestrator
+    participant Classifier as Classification LLM
+    participant Ledger as Ledger Service
+    participant Audit as Audit Log Service
+
+    User-&gt;&gt;UI: Open “Exception Workbench”
+    UI-&gt;&gt;GW: GET /exceptions?status=open&amp;persona=CFO (Bearer token)
+    GW-&gt;&gt;Auth: Validate token
+    Auth--&gt;&gt;GW: OK (roles=FinanceOps)
+    GW-&gt;&gt;Ledger: Query open exceptions
+    Ledger--&gt;&gt;GW: JSON payload
+    GW--&gt;&gt;UI: Render list
+
+    User-&gt;&gt;UI: Click “Ask Copilot” – “Why is cash unapplied?”
+    UI-&gt;&gt;Cop: POST /copilot/query {question}
+    Cop-&gt;&gt;GW: Forward request (auth token)
+    GW-&gt;&gt;Auth: Validate token
+    Auth--&gt;&gt;GW: OK
+    GW-&gt;&gt;Orchestrator: invoke_copilot(question, context)
+    Orchestrator-&gt;&gt;Classifier: classify_intent(question)
+    Classifier--&gt;&gt;Orchestrator: intent=unapplied_cash, confidence=0.94
+    Orchestrator-&gt;&gt;Ledger: fetch_unapplied_cash()
+    Ledger--&gt;&gt;Orchestrator: amount= $1.2M, source=Lockbox #1234
+    Orchestrator-&gt;&gt;Audit: log_copilot_interaction(user,question,answer,confidence)
+    Audit--&gt;&gt;Orchestrator: OK
+    Orchestrator--&gt;&gt;Cop: answer + evidence + confidence
+    Cop--&gt;&gt;UI: Render chat bubble (evidence links)
+    UI--&gt;&gt;User: Display answer with “Approve Action” button</code></pre>
+<p><em>Key security &amp; audit points</em> are highlighted in the sequence: <strong>token validation</strong>, <strong>role‑based access</strong>, <strong>audit‑log write</strong> before any UI display.</p>
+<hr>
+<h2 id="5-technical-architecture">5. Technical Architecture</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Decision</th>
+<th>Rationale (Tool Selection)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Runtime</strong></td>
+<td><strong>Kubernetes (EKS / AKS)</strong></td>
+<td>Cloud‑native orchestration, auto‑scaling, pod‑security‑policies, multi‑AZ resilience</td>
+</tr>
+<tr>
+<td><strong>Language Stack</strong></td>
+<td><strong>Java 17 (Spring Boot) + TypeScript (React)</strong></td>
+<td>Enterprise‑grade, strong typing, mature security libraries, aligns with existing Meridian stack</td>
+</tr>
+<tr>
+<td><strong>AI Orchestration</strong></td>
+<td><strong>LangChain (Python) running as side‑car containers</strong></td>
+<td>Proven LLM workflow, easy integration with Azure OpenAI, supports tool‑use &amp; memory</td>
+</tr>
+<tr>
+<td><strong>Message Bus</strong></td>
+<td><strong>Apache Kafka (Confluent Cloud)</strong></td>
+<td>High‑throughput, exactly‑once semantics for finance events</td>
+</tr>
+<tr>
+<td><strong>Cache</strong></td>
+<td><strong>Redis (clustered)</strong></td>
+<td>Low‑latency look‑ups for ledger balances, session store</td>
+</tr>
+<tr>
+<td><strong>Search / Analytics</strong></td>
+<td><strong>ElasticSearch + Kibana</strong></td>
+<td>Full‑text search on statements, exception clustering, audit‑log exploration</td>
+</tr>
+<tr>
+<td><strong>Observability</strong></td>
+<td><strong>OpenTelemetry SDK</strong> (Java &amp; Python) → <strong>Prometheus + Grafana</strong> + <strong>ELK</strong></td>
+<td>End‑to‑end tracing across micro‑services, supports compliance reporting</td>
+</tr>
+<tr>
+<td><strong>CI/CD</strong></td>
+<td><strong>GitHub Actions + ArgoCD</strong></td>
+<td>Declarative GitOps, automated security scans (Trivy, Semgrep, SonarQube)</td>
+</tr>
+<tr>
+<td><strong>Secrets Management</strong></td>
+<td><strong>HashiCorp Vault</strong> (auto‑unseal via Cloud KMS)</td>
+<td>Centralised secret rotation, least‑privilege token issuance</td>
+</tr>
+<tr>
+<td><strong>Static Code Analysis</strong></td>
+<td><strong>Semgrep + SonarQube Community</strong></td>
+<td>Detect OWASP Top‑10, enforce coding standards</td>
+</tr>
+<tr>
+<td><strong>Container Scanning</strong></td>
+<td><strong>Trivy</strong></td>
+<td>CVE detection, SBOM generation for supply‑chain security</td>
+</tr>
+<tr>
+<td><strong>Synthetic Data Generator</strong></td>
+<td><strong>Faker + custom Python scripts</strong> (containerized)</td>
+<td>Guarantees no PII, reproducible test data sets</td>
+</tr>
+</tbody>
+</table></div>
+<p>All tools are <strong>event‑approved</strong> (listed in the Enterprise‑Approved Tool List) and have been vetted for <strong>no real customer data</strong> ingestion.</p>
+<hr>
+<h2 id="6-integration-architecture">6. Integration Architecture</h2>
+<h3 id="61-core-integration-points">6.1 Core Integration Points</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>System</th>
+<th>Direction</th>
+<th>Protocol / Format</th>
+<th>Frequency</th>
+<th>Governance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agency Core Systems</strong> (legacy policy admin)</td>
+<td>Inbound – transaction feeds</td>
+<td>SFTP (CSV/EDI) → ingestion micro‑service</td>
+<td>Near‑real‑time (batch every 5 min)</td>
+<td>Data‑mapping contract, checksum validation</td>
+</tr>
+<tr>
+<td><strong>Carrier Portals</strong></td>
+<td>Inbound – premium statements</td>
+<td>HTTPS (REST JSON) + optional XML</td>
+<td>Daily at 02:00 UTC</td>
+<td>Mutual TLS, schema validation</td>
+</tr>
+<tr>
+<td><strong>Bank Lockbox</strong></td>
+<td>Inbound – receipt files</td>
+<td>SFTP (fixed‑width)</td>
+<td>Event‑driven (file arrival)</td>
+<td>File‑level encryption, PGP</td>
+</tr>
+<tr>
+<td><strong>Payroll / Producer Compensation</strong></td>
+<td>Outbound – payout instructions</td>
+<td>ACH file (NACHA) via secure FTP</td>
+<td>End‑of‑day batch</td>
+<td>Dual‑control sign‑off</td>
+</tr>
+<tr>
+<td><strong>ERP / General Ledger</strong></td>
+<td>Outbound – journal entries</td>
+<td>SOAP (XML) or REST (JSON) depending on ERP</td>
+<td>Real‑time posting after approval</td>
+<td>Idempotent API, audit‑trail</td>
+</tr>
+<tr>
+<td><strong>External AI Provider</strong> (Azure OpenAI)</td>
+<td>Outbound – prompt/response</td>
+<td>HTTPS (TLS 1.3) JSON</td>
+<td>Per‑request (≤ 200 ms)</td>
+<td>Prompt‑registry, token‑usage logging</td>
+</tr>
+<tr>
+<td><strong>Monitoring / SIEM</strong></td>
+<td>Outbound – logs &amp; metrics</td>
+<td>Syslog / OTLP</td>
+<td>Continuous</td>
+<td>Log‑retention policy, WORM storage</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="62-integration-flow-diagram-mermaid">6.2 Integration Flow Diagram (Mermaid)</h3>
+<pre><code class="language-mermaid">flowchart LR
+    subgraph A[Agency Systems]
+        A1[Policy Admin (CSV)]
+        A2[Commission Engine (XML)]
+    end
+    subgraph C[Carrier Portals]
+        C1[Premium Statement API]
+    end
+    subgraph B[Bank Lockbox]
+        B1[Lockbox File (FIXED)]
+    end
+    subgraph AI[AI Provider]
+        AI1[Azure OpenAI (gpt‑4o‑mini)]
+    end
+    subgraph ERP[ERP / GL]
+        ERP1[Journal API]
+    end
+    subgraph S[Spendid Application]
+        GW[Kong API GW]
+        ING[Ingestion Service]
+        EXC[Exception Service]
+        LDR[Ledger Service]
+        COP[Copilot (LangChain)]
+        AUD[Audit Log Service]
+    end
+
+    A1 --&gt;|SFTP| ING
+    A2 --&gt;|REST| ING
+    B1 --&gt;|SFTP| ING
+    C1 --&gt;|HTTPS| ING
+
+    ING --&gt; GW
+    GW --&gt; EXC
+    GW --&gt; LDR
+    EXC --&gt; COP
+    COP --&gt; AI1
+    AI1 --&gt; COP
+    COP --&gt; EXC
+    EXC --&gt; AUD
+    LDR --&gt; ERP1
+    ERP1 --&gt;|HTTPS| GW</code></pre>
+<p><em>Notes</em>  </p>
+<ul>
+<li>All external connections use <strong>mutual TLS</strong> and <strong>IP allow‑lists</strong>.  </li>
+<li><strong>Idempotency keys</strong> are required on every inbound file to guarantee exactly‑once processing.  </li>
+<li><strong>Message‑level encryption</strong> (AES‑256) is applied for any PII/PCI data before entering Kafka.  </li>
+</ul>
+<hr>
+<h2 id="7-security-architecture">7. Security Architecture</h2>
+<h3 id="71-security-principles">7.1 Security Principles</h3>
+<ol>
+<li><strong>Zero Trust</strong> – Verify every request, never trust network location.  </li>
+<li><strong>Least Privilege</strong> – Role‑based access (RBAC) enforced by Keycloak + OPA policies.  </li>
+<li><strong>Defense in Depth</strong> – Network segmentation, pod‑security‑policies, WAF, runtime security.  </li>
+<li><strong>Secure AI</strong> – Prompt‑registry, model‑card, confidence thresholds, human‑in‑the‑loop for any monetary action.  </li>
+<li><strong>Data Protection</strong> – Encryption‑in‑transit (TLS 1.3), encryption‑at‑rest (AES‑256), tokenization for account numbers.  </li>
+</ol>
+<h3 id="72-threat-model-stride">7.2 Threat Model (STRIDE)</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Asset</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Spoofing</strong></td>
+<td>API calls, user sessions</td>
+<td>OIDC with MFA, short‑lived JWTs, rotating</td>
+</tr>
+</tbody>
+</table></div>

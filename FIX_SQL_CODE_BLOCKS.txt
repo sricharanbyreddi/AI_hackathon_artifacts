@@ -1,0 +1,11 @@
+SQL/code fence fix v6
+1. Stop Flask (Ctrl+C).
+2. Extract this ZIP to a NEW folder.
+3. In VS Code use File > Open Folder and select the folder containing app.py.
+4. In terminal run: python -m pip install -r requirements.txt
+5. Run: python app.py
+6. Check the terminal's current directory is this extracted folder.
+7. Hard refresh browser with Ctrl+Shift+R.
+
+This version converts fenced code blocks to explicit <pre><code> HTML before sanitizing,
+so a literal ```sql line should no longer appear as a paragraph.

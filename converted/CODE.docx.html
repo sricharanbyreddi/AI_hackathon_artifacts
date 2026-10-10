@@ -1,0 +1,466 @@
+<p>CODE</p>
+<h1 id="spendid-project-enterprise-startercode-architecture">Spendid Project – Enterprise Starter‑Code Architecture</h1>
+<p><strong>Industry:</strong> Insurance – Brokerage Finance Operations<br>
+<strong>Application Type:</strong> Enterprise‑grade Finance‑Control Command Center<br>
+<strong>Core Stack:</strong>  </p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Reason for Selection</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Frontend</strong></td>
+<td><strong>Streamlit</strong> (Python) + <strong>React</strong> (optional for heavy UI)</td>
+<td>Rapid UI prototyping, native Python integration with AI agents, easy to embed in internal portals.</td>
+</tr>
+<tr>
+<td><strong>Backend API</strong></td>
+<td><strong>FastAPI</strong> (Python)</td>
+<td>High‑performance async, OpenAPI auto‑generation, strong typing, built‑in security utilities.</td>
+</tr>
+<tr>
+<td><strong>AI Orchestration</strong></td>
+<td><strong>LangChain</strong> + <strong>Azure OpenAI Service</strong> (or OpenAI GPT‑4o)</td>
+<td>Agentic workflow, prompt chaining, model‑level cost‑tracking, enterprise‑grade compliance (data residency, VNet).</td>
+</tr>
+<tr>
+<td><strong>Database</strong></td>
+<td><strong>PostgreSQL 15</strong> (RDS/Azure‑Postgres)</td>
+<td>ACID, row‑level security, native JSONB for audit logs, mature ecosystem, easy horizontal scaling via read‑replicas.</td>
+</tr>
+<tr>
+<td><strong>Auth / Identity</strong></td>
+<td><strong>OAuth 2.0 / OpenID Connect</strong> via <strong>Keycloak</strong> (self‑hosted)</td>
+<td>Centralised identity, fine‑grained role‑based access (RBAC), MFA, audit trails, SAML/AD integration.</td>
+</tr>
+<tr>
+<td><strong>Containerisation</strong></td>
+<td><strong>Docker</strong> + <strong>Docker‑Compose</strong> (local) / <strong>Kubernetes</strong> (EKS/AKS)</td>
+<td>Immutable infrastructure, reproducible builds, auto‑scaling, zero‑downtime deployments.</td>
+</tr>
+<tr>
+<td><strong>IaC</strong></td>
+<td><strong>Terraform</strong> (AWS/Azure)</td>
+<td>Declarative, version‑controlled infra, compliance guardrails (policy as code).</td>
+</tr>
+<tr>
+<td><strong>CI/CD</strong></td>
+<td><strong>GitHub Actions</strong></td>
+<td>Integrated with repo, secret‑scanning, SAST/DAST, automated test &amp; deployment pipelines.</td>
+</tr>
+<tr>
+<td><strong>Observability</strong></td>
+<td><strong>OpenTelemetry</strong>, <strong>Prometheus</strong>, <strong>Grafana</strong>, <strong>ELK</strong></td>
+<td>End‑to‑end tracing, metrics, log aggregation, audit‑ready dashboards.</td>
+</tr>
+<tr>
+<td><strong>Static &amp; Dynamic Security</strong></td>
+<td><strong>Semgrep</strong>, <strong>SonarQube CE</strong>, <strong>OWASP ZAP</strong></td>
+<td>Code‑quality, SAST, DAST, policy enforcement.</td>
+</tr>
+<tr>
+<td><strong>Prompt &amp; Model Registry</strong></td>
+<td><strong>SQLite</strong> (internal) + <strong>JSONL</strong> export</td>
+<td>Lightweight, auditable record of every LLM interaction.</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Governance Note</strong> – All tools are <strong>event‑approved</strong> (open‑source or enterprise‑grade SaaS) and <strong>do not ingest any real customer data</strong>. Synthetic data generators are provided in the repo.</p>
+</blockquote>
+<hr>
+<h2 id="1-folder-repository-layout">1. Folder / Repository Layout</h2>
+<pre><code>spendid_project/
+│
+├─ .github/                     # GitHub Actions workflows
+│   └─ workflows/
+│       ├─ ci.yml
+│       └─ cd.yml
+│
+├─ infra/                       # Terraform IaC
+│   ├─ main.tf
+│   ├─ variables.tf
+│   ├─ outputs.tf
+│   └─ modules/
+│       ├─ vpc/
+│       ├─ rds/
+│       └─ eks/
+│
+├─ docs/                        # Architecture, compliance, governance docs
+│   ├─ architecture.md
+│   ├─ security_policy.md
+│   └─ prompt_registry_template.xlsx
+│
+├─ src/
+│   ├─ backend/                 # FastAPI application
+│   │   ├─ app/
+│   │   │   ├─ api/
+│   │   │   │   ├─ v1/
+│   │   │   │   │   ├─ finance.py
+│   │   │   │   │   ├─ auth.py
+│   │   │   │   │   └─ ai.py
+│   │   │   │   └─ __init__.py
+│   │   │   ├─ core/
+│   │   │   │   ├─ config.py
+│   │   │   │   ├─ security.py
+│   │   │   │   ├─ logger.py
+│   │   │   │   └─ audit.py
+│   │   │   ├─ db/
+│   │   │   │   ├─ models/
+│   │   │   │   │   ├─ finance.py
+│   │   │   │   │   └─ audit_log.py
+│   │   │   │   ├─ schemas/
+│   │   │   │   │   ├─ finance.py
+│   │   │   │   │   └─ audit.py
+│   │   │   │   ├─ base.py
+│   │   │   │   └─ session.py
+│   │   │   ├─ services/
+│   │   │   │   ├─ finance_service.py
+│   │   │   │   ├─ ai_orchestrator.py
+│   │   │   │   └─ notification.py
+│   │   │   ├─ main.py
+│   │   │   └─ __init__.py
+│   │   └─ Dockerfile
+│   │
+│   ├─ frontend/                # Streamlit UI
+│   │   ├─ pages/
+│   │   │   ├─ 1_dashboard.py
+│   │   │   ├─ 2_exceptions.py
+│   │   │   ├─ 3_copilot.py
+│   │   │   └─ 4_approvals.py
+│   │   ├─ components/
+│   │   │   ├─ auth.py
+│   │   │   ├─ finance_chart.py
+│   │   │   └─ exception_table.py
+│   │   ├─ utils/
+│   │   │   ├─ api_client.py
+│   │   │   └─ session_state.py
+│   │   ├─ requirements.txt
+│   │   ├─ streamlit_app.py
+│   │   └─ Dockerfile
+│   │
+│   ├─ ai_agent/                # Optional separate agent demo (Chainlit)
+│   │   ├─ agent.py
+│   │   ├─ prompts/
+│   │   │   └─ classification.md
+│   │   └─ Dockerfile
+│   │
+│   └─ synthetic_data/
+│       ├─ generator.py
+│       └─ data_specs.yaml
+│
+├─ tests/
+│   ├─ integration/
+│   │   └─ test_finance_api.py
+│   ├─ unit/
+│   │   ├─ test_models.py
+│   │   └─ test_ai_orchestrator.py
+│   └─ performance/
+│       └─ load_test.jmx
+│
+├─ scripts/
+│   ├─ lint.sh
+│   ├─ security_scan.sh
+│   └─ deploy.sh
+│
+├─ .dockerignore
+├─ .gitignore
+├─ docker-compose.yml
+├─ helm/
+│   └─ splendid/
+│       ├─ Chart.yaml
+│       ├─ values.yaml
+│       └─ templates/
+│           ├─ backend-deployment.yaml
+│           ├─ frontend-deployment.yaml
+│           ├─ postgres-statefulset.yaml
+│           └─ ingress.yaml
+│
+├─ requirements.txt            # Backend deps
+├─ pyproject.toml
+└─ README.md</code></pre>
+<p><em>All source files are type‑annotated, linted with </em><em>ruff</em><em>, and pass </em><em>mypy</em><em> strict mode.</em></p>
+<hr>
+<h2 id="2-highlevel-architecture-mermaid">2. High‑Level Architecture (Mermaid)</h2>
+<pre><code class="language-mermaid">graph TD
+    subgraph Users
+        CFO[“CFO / Controller”]
+        Ops[“Finance Ops Analyst”]
+        Auditor[“Internal Auditor”]
+    end
+
+    subgraph Frontend[Streamlit UI (Docker)]
+        UI[Dashboard / Copilot]
+    end
+
+    subgraph API[FastAPI (Docker)]
+        Auth[Auth Service (Keycloak JWT)]
+        Finance[Finance Core API]
+        AI[AI Orchestrator (LangChain)]
+        Audit[Audit Log Service]
+    end
+
+    subgraph DB[PostgreSQL (RDS)]
+        FinanceDB[(Finance Ledger)]
+        AuditDB[(Audit Log)]
+    end
+
+    subgraph AIProvider[Azure OpenAI / OpenAI]
+        LLM[GPT‑4o]
+    end
+
+    subgraph Infra[Terraform / Kubernetes]
+        VPC
+        EKS[AKS/EKS Cluster]
+        RDS[Postgres Instance]
+        IAM[IAM / RBAC]
+    end
+
+    Users --&gt; UI
+    UI --&gt;|Bearer JWT| Auth
+    UI --&gt; Finance
+    UI --&gt; AI
+    Auth --&gt;|Validate JWT| Keycloak[(Keycloak IdP)]
+    Finance --&gt; FinanceDB
+    AI --&gt; LLM
+    AI --&gt; FinanceDB
+    AI --&gt; AuditDB
+    Finance --&gt; AuditDB
+    Audit --&gt; AuditDB
+
+    classDef secure fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
+    class Auth,Finance,AI,Audit secure;</code></pre>
+<h3 id="deployment-diagram-k8s">Deployment Diagram (K8s)</h3>
+<pre><code class="language-mermaid">graph LR
+    subgraph &quot;Kubernetes Cluster&quot;
+        ingress[Ingress (NGINX/ALB)]
+        backend[Deployment: fastapi-backend]
+        frontend[Deployment: streamlit-frontend]
+        ai[Deployment: ai-orchestrator]
+        db[StatefulSet: postgres]
+        keycloak[Deployment: keycloak]
+        prometheus[Deployment: prometheus]
+        grafana[Deployment: grafana]
+        elk[StatefulSet: elasticsearch]
+    end
+
+    ingress --&gt; frontend
+    ingress --&gt; backend
+    ingress --&gt; ai
+    backend --&gt; db
+    ai --&gt; db
+    backend --&gt; keycloak
+    ai --&gt; keycloak
+    backend --&gt; prometheus
+    ai --&gt; prometheus
+    db --&gt; elk
+    keycloak --&gt; prometheus</code></pre>
+<p><em>All traffic is TLS‑terminated at the Ingress. Internal pod‑to‑pod communication uses </em><em>mutual TLS</em><em> via Service Mesh (Istio) for zero‑trust.</em></p>
+<hr>
+<h2 id="3-security-compliance-governance">3. Security, Compliance &amp; Governance</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Controls</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Authentication &amp; Authorization</strong></td>
+<td>OAuth2/OIDC, RBAC, MFA, token revocation</td>
+<td>Keycloak as IdP; FastAPI dependency <code>get_current_user</code> validates JWT; role‑based scopes (<code>finance:read</code>, <code>finance:write</code>, <code>ai:execute</code>).</td>
+</tr>
+<tr>
+<td><strong>Data Protection</strong></td>
+<td>Encryption‑at‑rest, encryption‑in‑transit, column‑level masking</td>
+<td>RDS Transparent Data Encryption (AES‑256); TLS 1.3 for all HTTP; PostgreSQL <code>pgcrypto</code> for PII fields; row‑level security policies for audit logs.</td>
+</tr>
+<tr>
+<td><strong>Auditability</strong></td>
+<td>Immutable audit trail, tamper‑evidence</td>
+<td><code>audit_log</code> table with <code>jsonb</code> payload, <code>created_at</code>, <code>user_id</code>; write‑only via stored procedure; logs shipped to ELK with hash‑chain verification.</td>
+</tr>
+<tr>
+<td><strong>Compliance</strong></td>
+<td>SOC‑2, ISO‑27001, GDPR (data‑subject rights)</td>
+<td>Terraform guardrails enforce VPC isolation, IAM least‑privilege; Data‑subject deletion endpoint (<code>/privacy/erase</code>).</td>
+</tr>
+<tr>
+<td><strong>Secure Coding</strong></td>
+<td>SAST, DAST, secret scanning, dependency checks</td>
+<td>GitHub Actions run <strong>Semgrep</strong>, <strong>Bandit</strong>, <strong>OWASP ZAP</strong>, <strong>Trivy</strong>; <code>git‑secret</code> prevents committing credentials.</td>
+</tr>
+<tr>
+<td><strong>Least‑Privilege AI</strong></td>
+<td>Model‑level access control, prompt‑level guardrails</td>
+<td>LangChain wrapper checks user scope before invoking LLM; system prompt includes “Never disclose raw PII”.</td>
+</tr>
+<tr>
+<td><strong>Observability &amp; Incident Response</strong></td>
+<td>Centralised logging, metrics, alerting</td>
+<td>OpenTelemetry instrumentation in FastAPI &amp; Streamlit; Prometheus alerts on latency &gt; 500 ms, error‑rate &gt; 1 %.</td>
+</tr>
+<tr>
+<td><strong>Disaster Recovery</strong></td>
+<td>Automated backups, point‑in‑time restore</td>
+<td>RDS automated snapshots (daily, 35‑day retention); Kubernetes <code>Velero</code> backups for stateful sets.</td>
+</tr>
+<tr>
+<td><strong>Governance</strong></td>
+<td>Code review, change‑control, versioning</td>
+<td>Mandatory PR approvals (2 reviewers), <code>CODEOWNERS</code> for security‑critical modules, semantic versioning.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="4-detailed-component-design">4. Detailed Component Design</h2>
+<h3 id="41-fastapi-backend-srcbackendapp">4.1 FastAPI Backend (<code>src/backend/app</code>)</h3>
+<p><em>Key files</em>  </p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main.py</code></td>
+<td>Application entry‑point, mounts routers, configures middleware (CORS, GZip, OpenTelemetry).</td>
+</tr>
+<tr>
+<td><code>core/config.py</code></td>
+<td>Pydantic <code>BaseSettings</code> reading from environment (prefixed <code>SPENDID_</code>).</td>
+</tr>
+<tr>
+<td><code>core/security.py</code></td>
+<td>JWT utilities, password hashing (<code>argon2</code>), role‑check dependency.</td>
+</tr>
+<tr>
+<td><code>core/logger.py</code></td>
+<td>Structured JSON logger (Loguru) with request‑ID correlation.</td>
+</tr>
+<tr>
+<td><code>core/audit.py</code></td>
+<td>Decorator <code>@audit_event</code> writes immutable rows to <code>audit_log</code>.</td>
+</tr>
+<tr>
+<td><code>db/base.py</code></td>
+<td>SQLAlchemy <code>declarative_base</code> + async engine (<code>asyncpg</code>).</td>
+</tr>
+<tr>
+<td><code>db/session.py</code></td>
+<td>Async session factory with connection‑pool (max 50).</td>
+</tr>
+<tr>
+<td><code>db/models/finance.py</code></td>
+<td>Ledger tables: <code>transactions</code>, <code>exceptions</code>, <code>settlements</code>, <code>commissions</code>.</td>
+</tr>
+<tr>
+<td><code>db/models/audit_log.py</code></td>
+<td>Immutable audit table with <code>jsonb</code> payload.</td>
+</tr>
+<tr>
+<td><code>api/v1/finance.py</code></td>
+<td>CRUD endpoints, exception‑workbench, forecasting triggers.</td>
+</tr>
+<tr>
+<td><code>api/v1/ai.py</code></td>
+<td>Endpoint <code>/ai/classify</code> – receives raw exception payload, returns classification, confidence, suggested action.</td>
+</tr>
+<tr>
+<td><code>services/ai_orchestrator.py</code></td>
+<td>LangChain <strong>Agent</strong> that: <br>1️⃣ Retrieves related ledger rows <br>2️⃣ Calls LLM with system prompt (see <em>Prompt Registry</em>) <br>3️⃣ Parses JSON response <br>4️⃣ Persists classification &amp; confidence.</td>
+</tr>
+<tr>
+<td><code>services/notification.py</code></td>
+<td>Sends Slack/Teams webhook + email via <strong>AWS SES</strong> (or Azure Communication).</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="sample-fastapi-security-dependency">Sample FastAPI Security Dependency</h4>
+<pre><code class="language-python"># core/security.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from jose import jwt, JWTError
+from pydantic import BaseModel
+from typing import List
+
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    authorizationUrl=&quot;https://keycloak.example.com/auth/realms/spendid/protocol/openid-connect/auth&quot;,
+    tokenUrl=&quot;https://keycloak.example.com/auth/realms/spendid/protocol/openid-connect/token&quot;,
+)
+
+class TokenPayload(BaseModel):
+    sub: str
+    scopes: List[str] = []
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, &quot;PUBLIC_KEY_PLACEHOLDER&quot;, algorithms=[&quot;RS256&quot;])
+        token_data = TokenPayload(**payload)
+    except (JWTError, ValidationError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=&quot;Could not validate credentials&quot;,
+        )
+    return token_data
+
+def require_scope(required: str):
+    def wrapper(user: TokenPayload = Depends(get_current_user)):
+        if required not in user.scopes:
+            raise HTTPException(status_code=403, detail=&quot;Insufficient scope&quot;)
+        return user
+    return wrapper</code></pre>
+<h3 id="42-streamlit-frontend-srcfrontend">4.2 Streamlit Frontend (<code>src/frontend</code>)</h3>
+<p><em>Key concepts</em>  </p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1_dashboard.py</code></td>
+<td>KPI tiles (cash position, aging, exposure), high‑impact exception heat‑map.</td>
+</tr>
+<tr>
+<td><code>2_exceptions.py</code></td>
+<td>Workbench table with filters, bulk actions, evidence modal.</td>
+</tr>
+<tr>
+<td><code>3_copilot.py</code></td>
+<td>Chat‑style UI that calls <code>/ai/classify</code> and displays confidence, source documents, suggested next steps.</td>
+</tr>
+<tr>
+<td><code>4_approvals.py</code></td>
+<td>Human‑in‑the‑loop approval flow (sign‑off, journal entry generation).</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="streamlit-session-auth">Streamlit Session &amp; Auth</h4>
+<pre><code class="language-python"># components/auth.py
+import streamlit as st
+import requests
+
+def login():
+    if &quot;token&quot; not in st.session_state:
+        with st.form(&quot;login&quot;):
+            username = st.text_input(&quot;Username&quot;)
+            password = st.text_input(&quot;Password&quot;, type=&quot;password&quot;)
+            submitted = st.form_submit_button(&quot;Sign in&quot;)
+            if submitted:
+                resp = requests.post(
+                    &quot;https://auth.spendid.example.com/realms/spendid/protocol/openid-connect/token&quot;,
+                    data={&quot;grant_type&quot;:&quot;password&quot;,&quot;client_id&quot;:&quot;streamlit&quot;,&quot;username&quot;:username,&quot;password&quot;:password},
+                )
+                if resp.status_code == 200:
+                    st.session_state.token = resp.json()[&quot;access</code></pre>

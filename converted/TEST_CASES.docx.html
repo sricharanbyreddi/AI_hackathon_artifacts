@@ -1,0 +1,460 @@
+<p>TEST_CASES</p>
+<h2 id="enterprisegrade-functional-test-suite">Enterprise‑Grade Functional Test Suite</h2>
+<p><strong>Project:</strong> <em>Spendid_project – Brokerage Finance Operations Command Center</em><br>
+<strong>Industry:</strong> Insurance – Finance Operations<br>
+<strong>Scope:</strong> Covers all functional, integration, security, performance and UAT aspects required to certify the solution for production use.  </p>
+<blockquote>
+<p><strong>Governance &amp; Traceability</strong> – Every test case is linked to a requirement (R‑xxx) from the <strong>Functional Requirements Document (FRD)</strong>, mapped to the corresponding component in the <strong>Application Architecture</strong>, and traced to the automated test script (if any).  The matrix is included in the <strong>Traceability Matrix</strong> (Deliverable 7).  </p>
+<p><strong>Compliance</strong> – Tests reference relevant controls (e.g., SOX 404, PCI‑DSS, GDPR) where data‑handling or audit‑trail is involved.  </p>
+<p><strong>Security &amp; Auditability</strong> – All tests that affect privileged actions (payments, ledger entries, approvals) verify that the system enforces least‑privilege, multi‑factor approval, immutable audit logs and role‑based UI masking.  </p>
+<p><strong>Scalability</strong> – Load‑related functional checks (e.g., “high‑volume technical alert”) are flagged for performance validation in the <strong>Performance Test Plan</strong> (outside this functional suite).  </p>
+<p><strong>AI‑Specific Validation</strong> – Tests validate the <strong>Brokerage Finance Operations Agent</strong> (Deliverable 9) for classification confidence, grounding evidence, and responsible‑AI guardrails (human‑in‑the‑loop).  </p>
+</blockquote>
+<hr>
+<h3 id="legend-used-in-the-tables">Legend (used in the tables)</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P</strong></td>
+<td>Positive (happy‑path)</td>
+</tr>
+<tr>
+<td><strong>N</strong></td>
+<td>Negative (error/exception)</td>
+</tr>
+<tr>
+<td><strong>I</strong></td>
+<td>Integration</td>
+</tr>
+<tr>
+<td><strong>S</strong></td>
+<td>Security</td>
+</tr>
+<tr>
+<td><strong>U</strong></td>
+<td>User‑Acceptance (UAT)</td>
+</tr>
+<tr>
+<td><strong>H</strong></td>
+<td>High priority (must‑pass for release)</td>
+</tr>
+<tr>
+<td><strong>M</strong></td>
+<td>Medium priority</td>
+</tr>
+<tr>
+<td><strong>L</strong></td>
+<td>Low priority</td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>Automated (script exists)</td>
+</tr>
+<tr>
+<td><strong>M</strong></td>
+<td>Manual (requires human execution)</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="1-functional-test-cases-positive-negative">1️⃣ Functional Test Cases (Positive &amp; Negative)</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>TC‑ID</th>
+<th>Category</th>
+<th>Title</th>
+<th>Description</th>
+<th>Preconditions</th>
+<th>Test Steps</th>
+<th>Expected Result</th>
+<th>Post‑conditions</th>
+<th>Priority</th>
+<th>Automation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TC‑F‑001</strong></td>
+<td>P</td>
+<td>Load Valid Lockbox File</td>
+<td>System ingests a correctly‑formatted lockbox file and creates unapplied‑cash entries.</td>
+<td>User logged in as <strong>Finance Operations Analyst</strong>; valid lockbox file in staging bucket.</td>
+<td>1. Navigate to <em>Data Ingestion</em> → <em>Upload Lockbox</em>.<br>2. Select file and click <strong>Upload</strong>.<br>3. Confirm “Processing” status.<br>4. Verify entries appear in <strong>Cash‑to‑Carrier</strong> view.</td>
+<td>Unapplied‑cash records are created, linked to the originating lockbox batch, and displayed with correct amount &amp; timestamp.</td>
+<td>File marked <strong>Processed</strong>; audit log entry created.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑002</strong></td>
+<td>N</td>
+<td>Reject Malformed Lockbox File</td>
+<td>System must reject a lockbox file with missing mandatory columns.</td>
+<td>Same as TC‑F‑001, but file is malformed (e.g., missing “TransactionID”).</td>
+<td>1‑4 as above.</td>
+<td>System returns a <strong>Validation Error</strong> with explicit message “Missing TransactionID column”. No records are persisted.</td>
+<td>File flagged <strong>Rejected</strong>; error logged with file hash.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑003</strong></td>
+<td>P</td>
+<td>Carrier Statement Ingestion – On‑time</td>
+<td>Ingest a carrier statement received before cut‑off and generate payable entries.</td>
+<td>Carrier statement file (CSV) placed in <strong>Carrier‑Stmts</strong> bucket before cut‑off time.</td>
+<td>1. Open <em>Carrier Payables</em> → <em>Import Statement</em>.<br>2. Select file, click <strong>Import</strong>.<br>3. Review auto‑matched premiums.</td>
+<td>All premiums matched to invoices; payable amounts posted; statement status = <strong>Reconciled</strong>.</td>
+<td>Payable entries visible in ledger; audit trail created.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑004</strong></td>
+<td>N</td>
+<td>Late Carrier Statement – Cut‑off Violation</td>
+<td>System must flag a statement received after the cut‑off as <strong>Late</strong> and raise an exception.</td>
+<td>Same as TC‑F‑003 but file timestamp &gt; cut‑off (e.g., 5 pm).</td>
+<td>1‑3 as above.</td>
+<td>Statement imported, but <strong>Late‑Alert</strong> exception generated, displayed in <strong>Exception Workbench</strong> with severity “High”.</td>
+<td>Exception queued for review; no automatic payable posting.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑005</strong></td>
+<td>P</td>
+<td>Producer Commission Split – Valid Rule</td>
+<td>Process a commission split that conforms to the approved rule set.</td>
+<td>Commission rule “70/30 split for Agency A, 60/40 for Agency B” configured.</td>
+<td>1. Upload commission feed (JSON).<br>2. System calculates split.<br>3. Verify split amounts per producer.</td>
+<td>Split amounts match rule; commission ledger entries posted; no exception raised.</td>
+<td>Ledger reflects split; audit log records rule evaluation.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑006</strong></td>
+<td>N</td>
+<td>Producer Commission Split – Rule Conflict</td>
+<td>Feed a commission split that violates the configured rule (e.g., 80/20 for Agency A).</td>
+<td>Same as TC‑F‑005.</td>
+<td>1‑3 as above.</td>
+<td>System generates <strong>Commission‑Rule‑Violation</strong> exception, includes rule reference, and prevents posting.</td>
+<td>Exception appears in workbench; no ledger entry created.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑007</strong></td>
+<td>P</td>
+<td>Direct‑Bill Receivable Aging – Complete Remittance</td>
+<td>Direct‑Bill transaction with full remittance data ages correctly to <strong>0 days</strong>.</td>
+<td>Direct‑Bill feed includes full remittance fields (payment date, amount).</td>
+<td>1. Load Direct‑Bill feed.<br>2. Navigate to <em>Receivables</em> view.<br>3. Verify aging column.</td>
+<td>Aging = 0 days; status = <strong>Paid</strong>; cash applied to invoice.</td>
+<td>Receivable closed; audit entry created.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑008</strong></td>
+<td>N</td>
+<td>Direct‑Bill Receivable Aging – Missing Remittance</td>
+<td>Feed missing remittance data; system must flag <strong>Aging‑Exception</strong>.</td>
+<td>Same as TC‑F‑007 but remittance fields blank.</td>
+<td>1‑3 as above.</td>
+<td>Exception generated with reason “Missing remittance data”; aging shows <strong>&gt;30 days</strong>.</td>
+<td>Exception queued; no cash application.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑009</strong></td>
+<td>P</td>
+<td>Duplicate Transaction Detection</td>
+<td>System identifies a duplicate transaction (same policy, amount, date) and consolidates exposure.</td>
+<td>Two identical transaction records uploaded in same batch.</td>
+<td>1. Upload batch.<br>2. Run duplicate‑detection job (auto‑trigger).<br>3. Review <strong>Exception Workbench</strong>.</td>
+<td>Duplicate flagged, grouped under a single <strong>Duplicate‑Transaction</strong> exception; exposure amount shown once.</td>
+<td>Duplicate records marked <strong>Superseded</strong>; audit log records deduplication.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑010</strong></td>
+<td>N</td>
+<td>Duplicate Transaction – False Positive Prevention</td>
+<td>Ensure non‑duplicate but similar transactions are <strong>not</strong> incorrectly flagged.</td>
+<td>Two transactions with same amount but different policy numbers.</td>
+<td>Same steps as TC‑F‑009.</td>
+<td>No duplicate exception raised; both transactions appear separately.</td>
+<td>No change to ledger; audit shows “Deduplication check passed”.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑011</strong></td>
+<td>P</td>
+<td>General‑Ledger Interface – On‑time Load</td>
+<td>GL interface file arrives before month‑end cut‑off and updates ledger.</td>
+<td>GL file placed in <strong>GL‑Feed</strong> bucket before cut‑off.</td>
+<td>1. Trigger GL import.<br>2. Verify posting status.</td>
+<td>All GL entries posted; month‑end status remains <strong>On‑Track</strong>.</td>
+<td>Ledger reflects new entries; audit log created.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑012</strong></td>
+<td>N</td>
+<td>General‑Ledger Interface – Late Load</td>
+<td>Late GL file should raise <strong>Month‑End‑Risk</strong> exception.</td>
+<td>GL file timestamp &gt; cut‑off.</td>
+<td>Same steps as TC‑F‑011.</td>
+<td>Exception generated, severity “Critical”, displayed in <strong>Close‑Readiness</strong> view.</td>
+<td>Close‑readiness flag set to <strong>At‑Risk</strong>.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑013</strong></td>
+<td>P</td>
+<td>High‑Volume Technical Alert – Low Material Impact</td>
+<td>System receives 10 k low‑severity alerts; they must be <strong>auto‑filtered</strong> and not surface in the workbench.</td>
+<td>Synthetic alert feed (10 k rows) with severity “Info”.</td>
+<td>1. Load alerts.<br>2. Run alert‑filter job.<br>3. Open <strong>Exception Workbench</strong>.</td>
+<td>No alerts appear; system logs “Filtered 10 k low‑impact alerts”.</td>
+<td>Alert count stored for audit; no UI clutter.</td>
+<td>L</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑014</strong></td>
+<td>N</td>
+<td>High‑Volume Technical Alert – Material Impact</td>
+<td>Same feed but with a subset (5) marked “High”.</td>
+<td>Same as TC‑F‑013 but 5 rows severity “High”.</td>
+<td>Same steps.</td>
+<td>5 high‑impact alerts appear in workbench, prioritized by exposure.</td>
+<td>Alerts routed to responsible owners; audit entries created.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑015</strong></td>
+<td>P</td>
+<td>AI Exception Classification – High Confidence</td>
+<td>Agent receives an exception (unapplied cash) and returns classification with <strong>≥ 95 %</strong> confidence and evidence links.</td>
+<td>Exception record created via UI.</td>
+<td>1. Open <strong>Copilot</strong>.<br>2. Ask “Why is cash unapplied?”.<br>3. Review AI response.</td>
+<td>AI returns “Unapplied cash due to missing lockbox mapping”, confidence 96 %, evidence URLs to lockbox file and transaction log.</td>
+<td>Classification stored; human approval required before corrective action.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑016</strong></td>
+<td>N</td>
+<td>AI Exception Classification – Low Confidence</td>
+<td>Agent returns confidence &lt; 70 % – system must <strong>escalate</strong> to human analyst.</td>
+<td>Same as TC‑F‑015 but feed contains ambiguous data (e.g., corrupted transaction).</td>
+<td>Same steps.</td>
+<td>AI response includes “Confidence 62 % – requires analyst review”. System auto‑creates <strong>Human‑Review</strong> task.</td>
+<td>Task appears in workbench; audit logs AI confidence.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑017</strong></td>
+<td>P</td>
+<td>Conversational Copilot – Traceable Answer</td>
+<td>User asks “What cash is unapplied?” and receives answer with <strong>traceable evidence</strong> (record IDs, timestamps).</td>
+<td>User logged in as <strong>CFO</strong>.</td>
+<td>1. Open Copilot chat.<br>2. Type query.<br>3. Review answer.</td>
+<td>Answer lists total unapplied cash, breakdown by agency, and provides clickable record IDs that open the underlying ledger view.</td>
+<td>Interaction logged with user ID, query, response, confidence.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑018</strong></td>
+<td>N</td>
+<td>Conversational Copilot – Unauthorized Persona</td>
+<td>A <strong>Read‑Only</strong> user attempts to ask “Approve payout $10k”.</td>
+<td>User role = <strong>Viewer</strong>.</td>
+<td>1. Open Copilot.<br>2. Type approval request.</td>
+<td>Copilot replies “Insufficient permissions – approval actions require Finance Ops role”. No action taken.</td>
+<td>Attempt logged as <strong>Denied‑Action</strong> event.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑019</strong></td>
+<td>P</td>
+<td>Controlled Action Orchestration – Payment Approval</td>
+<td>CFO approves a payment after AI recommendation; system creates journal entry and audit trail.</td>
+<td>Exception “Settlement at risk” pending; CFO logged in.</td>
+<td>1. Open exception detail.<br>2. Click <strong>Approve Payment</strong>.<br>3. Confirm MFA prompt.<br>4. Submit.</td>
+<td>Payment scheduled, journal entry generated, and <strong>dual‑approval</strong> recorded (CFO + Treasury).</td>
+<td>Ledger updated; audit log shows both approvals, timestamps, and AI recommendation reference.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑F‑020</strong></td>
+<td>N</td>
+<td>Controlled Action Orchestration – Missing Dual‑Approval</td>
+<td>System must block payment if second approver does not respond within SLA (2 hrs).</td>
+<td>Same as TC‑F‑019 but Treasury user is offline.</td>
+<td>1‑4 as above; wait &gt; 2 hrs.</td>
+<td>System auto‑escalates to <strong>Escalation Owner</strong> and marks payment as <strong>Pending‑Approval</strong>.</td>
+<td>Escalation event logged; notification sent.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="2-integration-test-cases">2️⃣ Integration Test Cases</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>TC‑ID</th>
+<th>Category</th>
+<th>Title</th>
+<th>Description</th>
+<th>Preconditions</th>
+<th>Test Steps</th>
+<th>Expected Result</th>
+<th>Post‑conditions</th>
+<th>Priority</th>
+<th>Automation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TC‑I‑001</strong></td>
+<td>I</td>
+<td>Lockbox → Finance Ledger Sync</td>
+<td>Verify that lockbox ingestion updates the <strong>Finance Operations Ledger</strong> and triggers downstream AI exception detection.</td>
+<td>Valid lockbox file uploaded.</td>
+<td>1. Upload lockbox.<br>2. Wait for ETL pipeline (Kafka → DB).<br>3. Verify ledger rows.<br>4. Check AI exception queue.</td>
+<td>Ledger contains new receipt rows; AI job creates “Unapplied‑Cash” exception.</td>
+<td>Data persisted; audit entry for ETL run.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑I‑002</strong></td>
+<td>I</td>
+<td>Carrier Statement → Payables → AI Forecast</td>
+<td>Ensure carrier statement ingestion feeds payable records, which are then used by AI to forecast settlement risk.</td>
+<td>Statement file uploaded; AI forecasting service running.</td>
+<td>1. Import statement.<br>2. Verify payable entries.<br>3. Trigger AI forecast job.<br>4. Review forecast output.</td>
+<td>Forecast shows “Settlement risk = High” for any unmatched premium; linked to payable IDs.</td>
+<td>Forecast stored; notification sent to owner.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑I‑003</strong></td>
+<td>I</td>
+<td>Commission Feed → Exception Workbench → Copilot</td>
+<td>End‑to‑end flow from commission feed ingestion, through exception generation, to conversational query.</td>
+<td>Commission feed with rule violation uploaded.</td>
+<td>1. Load feed.<br>2. Verify <strong>Commission‑Rule‑Violation</strong> exception appears.<br>3. Open Copilot, ask “Why is commission pending?”.</td>
+<td>Copilot returns classification, confidence, and links to the offending feed row.</td>
+<td>Exception remains pending; conversation logged.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑I‑004</strong></td>
+<td>I</td>
+<td>GL Interface → Close‑Readiness Dashboard</td>
+<td>Validate that GL posting status updates the <strong>Month‑End Readiness</strong> view in real time.</td>
+<td>GL file processed successfully.</td>
+<td>1. Import GL.<br>2. Open Close‑Readiness dashboard.<br>3. Observe “GL Status”.</td>
+<td>Dashboard shows <strong>GL = Posted</strong>, overall readiness = <strong>Green</strong>.</td>
+<td>Dashboard refreshes automatically; audit log records status change.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑I‑005</strong></td>
+<td>I</td>
+<td>Alert Engine → Exception Prioritisation</td>
+<td>Confirm that high‑impact alerts are automatically prioritized over low‑impact ones.</td>
+<td>Mixed‑severity alert feed ingested.</td>
+<td>1. Run alert‑prioritisation job.<br>2. Open Exception Workbench.<br>3. Verify ordering.</td>
+<td>High‑severity alerts appear at top with <strong>Priority = Critical</strong>; low‑severity are filtered out.</td>
+<td>Prioritisation metadata stored; audit entry created.</td>
+<td>M</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑I‑006</strong></td>
+<td>I</td>
+<td>Synthetic Data Generator → All Modules</td>
+<td>Run the synthetic‑data generator and ensure every downstream module (ingestion, AI, UI) can handle the full data set without errors.</td>
+<td>Synthetic generator installed; empty DB.</td>
+<td>1. Execute generator script.<br>2. Run smoke‑test suite (basic CRUD on each module).</td>
+<td>No errors; all modules display expected counts (e.g., 10 k transactions, 2 k exceptions).</td>
+<td>Data persisted; baseline for performance testing.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="3-security-test-cases">3️⃣ Security Test Cases</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>TC‑ID</th>
+<th>Category</th>
+<th>Title</th>
+<th>Description</th>
+<th>Preconditions</th>
+<th>Test Steps</th>
+<th>Expected Result</th>
+<th>Post‑conditions</th>
+<th>Priority</th>
+<th>Automation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TC‑S‑001</strong></td>
+<td>S</td>
+<td>Role‑Based UI Masking – CFO vs Viewer</td>
+<td>Verify that sensitive fields (e.g., payment amounts, ledger edit buttons) are hidden for <strong>Viewer</strong> role.</td>
+<td>Two user accounts: <strong>cfo_user</strong> (role = Finance‑Ops) and <strong>viewer_user</strong> (role = Viewer).</td>
+<td>1. Log in as viewer.<br>2. Navigate to <em>Exception Detail</em>.<br>3. Observe UI elements.</td>
+<td>Payment amount displayed as “<strong><em>*”, </em>*Approve</strong> button disabled/absent.</td>
+<td>UI respects RBAC; audit logs “UI render – role = Viewer”.</td>
+<td>H</td>
+<td>A</td>
+</tr>
+<tr>
+<td><strong>TC‑S‑002</strong></td>
+<td>S</td>
+<td>Data‑At‑Rest Encryption</td>
+<td>Ensure all finance tables are encrypted at the storage layer (AES‑256).</td>
+<td>DB provisioned with Transparent Data Encryption (TDE).</td>
+<td>1. Insert test record via API.<br>2. Query underlying storage files (e.g., using <code>pgcrypto</code> view</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>

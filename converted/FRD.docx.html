@@ -1,0 +1,609 @@
+<p>FRD</p>
+<h1 id="spendid-project-functional-requirements-document-frd"><strong>Spendid Project – Functional Requirements Document (FRD)</strong></h1>
+<p><em>Brokerage Finance Operations Command Center</em><br>
+<em>Version 1.0 – 2026‑10‑10</em>  </p>
+<hr>
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>Meridian Brokerage Group needs a single, AI‑augmented “Finance Operations Command Center” that gives the CFO, Controllers, and Finance Operations teams a <strong>real‑time, material‑exception‑centric view</strong> of cash, receivables, carrier payables, producer commissions, and month‑end close. The solution must <strong>detect, classify, and prioritize</strong> financially material exceptions across heterogeneous legacy sources, surface actionable insights, and orchestrate <strong>human‑in‑the‑loop</strong> resolution while preserving segregation‑of‑duties, auditability, and regulatory compliance.  </p>
+<p>The Command Center will be built as an <strong>enterprise‑grade, container‑native web application</strong> with a <strong>conversational AI Copilot</strong> (Streamlit‑based) that leverages a vetted LLM (Azure OpenAI GPT‑4o) for exception intelligence, forecasting, and natural‑language query. All data will reside in a <strong>PostgreSQL</strong> data‑warehouse; synthetic data generators will seed the environment for development, testing, and demo.  </p>
+<hr>
+<h2 id="2-objectives">2. Objectives</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Objective</th>
+<th>Business Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>O‑1</strong></td>
+<td>Provide a <strong>single source of truth</strong> for all finance‑process exceptions (cash, receivables, payables, commissions, close)</td>
+<td>Eliminates fragmented spreadsheets &amp; manual reconciliations</td>
+</tr>
+<tr>
+<td><strong>O‑2</strong></td>
+<td><strong>AI‑driven classification &amp; materiality ranking</strong> of exceptions to surface high‑impact items first</td>
+<td>Reduces leakage, accelerates settlement</td>
+</tr>
+<tr>
+<td><strong>O‑3</strong></td>
+<td>Enable <strong>persona‑driven dashboards</strong> (CFO, Controller, Ops, Treasury, Agency Finance)</td>
+<td>Improves decision speed &amp; accountability</td>
+</tr>
+<tr>
+<td><strong>O‑4</strong></td>
+<td>Offer a <strong>conversational Copilot</strong> that can answer “why” and “what‑if” questions with traceable evidence</td>
+<td>Lowers cognitive load, speeds root‑cause analysis</td>
+</tr>
+<tr>
+<td><strong>O‑5</strong></td>
+<td>Enforce <strong>segregation of duties</strong> and <strong>human approval</strong> for any ledger, payment, or commission change</td>
+<td>Controls fraud &amp; regulatory risk</td>
+</tr>
+<tr>
+<td><strong>O‑6</strong></td>
+<td>Deliver <strong>audit‑ready</strong> logs, immutable evidence, and compliance reports (SOC 2, ISO 27001, GLBA)</td>
+<td>Supports internal &amp; external audits</td>
+</tr>
+<tr>
+<td><strong>O‑7</strong></td>
+<td>Provide <strong>scalable, cloud‑native deployment</strong> with auto‑scaling, zero‑downtime upgrades, and observability</td>
+<td>Guarantees availability during peak periods</td>
+</tr>
+<tr>
+<td><strong>O‑8</strong></td>
+<td>Capture <strong>tokenomics &amp; model economics</strong> to optimise AI cost vs. latency</td>
+<td>Ensures sustainable AI consumption</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="3-scope">3. Scope</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>In‑Scope</th>
+<th>Out‑Of‑Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>• Finance‑process model (7 journeys) <br>• Synthetic finance ledger <br>• Command‑center UI (dashboards, workbench) <br>• AI Exception Intelligence &amp; Forecasting <br>• Conversational Copilot (LLM) <br>• Controlled action orchestration (tasks, approvals) <br>• Audit &amp; compliance logging <br>• Synthetic data generator <br>• Tokenomics reporting</td>
+<td>• Integration with production core accounting systems (will be stubbed with synthetic adapters) <br>• Direct payment processing (only simulated journal entries) <br>• Real customer/PII data (strictly synthetic) <br>• Full‑blown ERP replacement</td>
+</tr>
+<tr>
+<td>• Deployment on Azure Kubernetes Service (AKS) <br>• CI/CD pipeline (GitHub Actions) <br>• Monitoring (Azure Monitor, OpenTelemetry)</td>
+<td>• On‑premise legacy system migration</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="4-actors-roles">4. Actors &amp; Roles</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Description</th>
+<th>Permissions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CFO</strong></td>
+<td>Ultimate owner of finance health, can view all dashboards, override materiality thresholds, approve high‑value payouts.</td>
+<td>Read‑all, Approve‑high‑value, Configure‑materiality</td>
+</tr>
+<tr>
+<td><strong>Controller / Finance Ops Lead</strong></td>
+<td>Oversees day‑to‑day exception handling, assigns owners, approves routine payouts.</td>
+<td>Read‑all, Assign‑owner, Approve‑routine</td>
+</tr>
+<tr>
+<td><strong>Finance Analyst</strong></td>
+<td>Investigates exceptions, adds evidence, triggers AI‑driven root‑cause analysis.</td>
+<td>Read‑assigned, Add‑evidence, Request‑approval</td>
+</tr>
+<tr>
+<td><strong>Treasury Manager</strong></td>
+<td>Monitors cash‑to‑carrier flows, authorises disbursements.</td>
+<td>Read‑cash, Approve‑disbursement</td>
+</tr>
+<tr>
+<td><strong>Producer Compensation Manager</strong></td>
+<td>Handles commission rules, validates splits, approves payouts.</td>
+<td>Read‑commission, Edit‑rules, Approve‑commission</td>
+</tr>
+<tr>
+<td><strong>Agency Finance Rep</strong></td>
+<td>Views agency‑specific exceptions, can submit missing data.</td>
+<td>Read‑agency, Submit‑data</td>
+</tr>
+<tr>
+<td><strong>AI Copilot (LLM Agent)</strong></td>
+<td>Provides classification, forecasting, natural‑language answers.</td>
+<td>System‑only, No write‑access to ledger</td>
+</tr>
+<tr>
+<td><strong>System Administrator</strong></td>
+<td>Manages infra, RBAC, secrets, monitoring.</td>
+<td>Full‑admin</td>
+</tr>
+<tr>
+<td><strong>Auditor</strong></td>
+<td>Reads immutable logs, generates compliance reports.</td>
+<td>Read‑audit‑trail</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="5-workflow-states-transitions">5. Workflow States &amp; Transitions</h2>
+<h3 id="51-highlevel-state-diagram-mermaid">5.1 High‑Level State Diagram (Mermaid)</h3>
+<pre><code class="language-mermaid">stateDiagram-v2
+    [*] --&gt; Ingestion
+    Ingestion --&gt; Validation : raw files received
+    Validation --&gt; Classification : AI model
+    Classification --&gt; Prioritization
+    Prioritization --&gt; Workbench
+    Workbench --&gt; Investigation
+    Investigation --&gt; Decision
+    Decision --&gt; Approved
+    Decision --&gt; Rejected
+    Approved --&gt; Execution
+    Rejected --&gt; Closed
+    Execution --&gt; Closed
+    Closed --&gt; [*]
+
+    %% Exception handling
+    Investigation --&gt; Escalated : SLA breach / high risk
+    Escalated --&gt; Decision</code></pre>
+<h3 id="52-detailed-state-definitions">5.2 Detailed State Definitions</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>State</th>
+<th>Description</th>
+<th>Owner</th>
+<th>SLA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ingestion</strong></td>
+<td>Files (lockbox, carrier statements, commission feeds) land in Azure Blob Storage via secure transfer.</td>
+<td>System</td>
+<td>≤ 5 min</td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>Schema &amp; checksum validation; malformed records flagged.</td>
+<td>System (AI‑Validator)</td>
+<td>≤ 2 min</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>LLM agent tags exception type, materiality score, probable cause.</td>
+<td>AI Copilot</td>
+<td>≤ 3 sec per record</td>
+</tr>
+<tr>
+<td><strong>Prioritization</strong></td>
+<td>Engine ranks exceptions by exposure, aging, control impact.</td>
+<td>System (Rule Engine)</td>
+<td>≤ 1 sec</td>
+</tr>
+<tr>
+<td><strong>Workbench</strong></td>
+<td>Exception appears in user queue with evidence bundle.</td>
+<td>Assigned Finance Analyst</td>
+<td>Real‑time</td>
+</tr>
+<tr>
+<td><strong>Investigation</strong></td>
+<td>Analyst adds notes, uploads supporting docs, may request additional data.</td>
+<td>Analyst</td>
+<td>≤ 2 days (default)</td>
+</tr>
+<tr>
+<td><strong>Decision</strong></td>
+<td>Analyst selects <strong>Approve</strong>, <strong>Reject</strong>, or <strong>Escalate</strong>.</td>
+<td>Analyst / Manager</td>
+<td>Immediate</td>
+</tr>
+<tr>
+<td><strong>Approved</strong></td>
+<td>Generates journal‑support package, triggers downstream workflow (payment, posting).</td>
+<td>Treasury / Compensation Manager</td>
+<td>≤ 4 hrs</td>
+</tr>
+<tr>
+<td><strong>Rejected</strong></td>
+<td>Exception closed with reason code.</td>
+<td>Analyst</td>
+<td>Immediate</td>
+</tr>
+<tr>
+<td><strong>Escalated</strong></td>
+<td>Auto‑escalates to CFO or Controller if SLA breach or exposure &gt; $100k.</td>
+<td>CFO / Controller</td>
+<td>≤ 4 hrs</td>
+</tr>
+<tr>
+<td><strong>Execution</strong></td>
+<td>System posts journal entry, updates ledger, notifies stakeholders.</td>
+<td>System</td>
+<td>≤ 30 min</td>
+</tr>
+<tr>
+<td><strong>Closed</strong></td>
+<td>Final state; immutable audit record created.</td>
+<td>System</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="6-functional-requirements">6. Functional Requirements</h2>
+<blockquote>
+<p><strong>Notation</strong> – Each requirement is uniquely identified (FR‑\&lt;n&gt;) and traceable to personas, UI, and tests.  </p>
+</blockquote>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Description</th>
+<th>Priority</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FR‑1</strong></td>
+<td><strong>Finance Journey Model</strong></td>
+<td>Define 7 finance journeys (Cash‑to‑Carrier, Agency Bill, Direct Bill, AR, Payables, Producer Compensation, Month‑End Close) with stages, controls, owners, cut‑offs, SLAs.</td>
+<td>Must</td>
+<td>Business Stakeholders</td>
+</tr>
+<tr>
+<td><strong>FR‑2</strong></td>
+<td><strong>Synthetic Finance Ledger</strong></td>
+<td>Store all transaction primitives (receipts, invoices, statements, reconciliations, commissions, adjustments, close tasks) in normalized PostgreSQL schema.</td>
+<td>Must</td>
+<td>Architecture</td>
+</tr>
+<tr>
+<td><strong>FR‑3</strong></td>
+<td><strong>Ingestion Engine</strong></td>
+<td>Securely ingest lockbox files, carrier statements, commission feeds via Azure Event Grid → Azure Functions → Blob → Staging tables.</td>
+<td>Must</td>
+<td>Technical</td>
+</tr>
+<tr>
+<td><strong>FR‑4</strong></td>
+<td><strong>Data Validation Service</strong></td>
+<td>Apply schema, checksum, and business‑rule validation (e.g., amount &gt; 0, date within period). Flag malformed records for manual review.</td>
+<td>Must</td>
+<td>FR‑3</td>
+</tr>
+<tr>
+<td><strong>FR‑5</strong></td>
+<td><strong>AI Exception Classification</strong></td>
+<td>LLM (GPT‑4o) receives validated record, returns: exception type, materiality score (0‑100), probable cause, confidence %, suggested next step.</td>
+<td>Must</td>
+<td>AI Strategy</td>
+</tr>
+<tr>
+<td><strong>FR‑6</strong></td>
+<td><strong>Materiality Ranking Engine</strong></td>
+<td>Combine AI score, exposure amount, aging, control impact to produce a <strong>Priority Score</strong> (0‑1000). Configurable weighting per persona.</td>
+<td>Must</td>
+<td>FR‑5</td>
+</tr>
+<tr>
+<td><strong>FR‑7</strong></td>
+<td><strong>Command‑Center Dashboard</strong></td>
+<td>Persona‑driven UI showing: cash position, aging buckets, settlement exposure, commission exceptions, reconciliation status, close readiness, KPI trend charts.</td>
+<td>Must</td>
+<td>UI/UX</td>
+</tr>
+<tr>
+<td><strong>FR‑8</strong></td>
+<td><strong>Exception Workbench</strong></td>
+<td>Queue view with filters (type, priority, owner, SLA), evidence panel (raw file, AI reasoning, audit trail), action buttons (Assign, Approve, Reject, Escalate).</td>
+<td>Must</td>
+<td>UI/UX</td>
+</tr>
+<tr>
+<td><strong>FR‑9</strong></td>
+<td><strong>Conversational Copilot</strong></td>
+<td>Chat interface (Streamlit) that accepts natural‑language queries, returns grounded answers with citations to ledger rows, AI reasoning, confidence, and assumptions.</td>
+<td>Must</td>
+<td>AI Agent</td>
+</tr>
+<tr>
+<td><strong>FR‑10</strong></td>
+<td><strong>Controlled Action Orchestration</strong></td>
+<td>Generate <strong>Task Packages</strong> (investigation, journal‑support, approval request) that require explicit human sign‑off before any ledger write.</td>
+<td>Must</td>
+<td>Workflow</td>
+</tr>
+<tr>
+<td><strong>FR‑11</strong></td>
+<td><strong>Segregation‑of‑Duties Enforcement</strong></td>
+<td>System enforces that the user who creates a journal entry cannot approve it; role‑based matrix stored in Azure AD.</td>
+<td>Must</td>
+<td>Security</td>
+</tr>
+<tr>
+<td><strong>FR‑12</strong></td>
+<td><strong>Audit Trail</strong></td>
+<td>Immutable append‑only log (Azure Log Analytics + immutable blob) capturing: user, timestamp, action, before/after values, AI prompt &amp; response, token usage.</td>
+<td>Must</td>
+<td>Compliance</td>
+</tr>
+<tr>
+<td><strong>FR‑13</strong></td>
+<td><strong>Notification Service</strong></td>
+<td>Email &amp; Teams alerts on: new high‑priority exception, SLA breach, escalation, approval required, AI low‑confidence flag.</td>
+<td>Should</td>
+<td>UX</td>
+</tr>
+<tr>
+<td><strong>FR‑14</strong></td>
+<td><strong>Synthetic Data Generator</strong></td>
+<td>CLI tool (Python) that creates multi‑agency transaction sets, feeds, statements, and noise; configurable volume (10 k‑10 M rows).</td>
+<td>Must</td>
+<td>Test</td>
+</tr>
+<tr>
+<td><strong>FR‑15</strong></td>
+<td><strong>Tokenomics Tracker</strong></td>
+<td>Middleware that records per‑request token count, latency, model version; aggregates daily/weekly for cost reporting.</td>
+<td>Should</td>
+<td>AI Ops</td>
+</tr>
+<tr>
+<td><strong>FR‑16</strong></td>
+<td><strong>Reporting Engine</strong></td>
+<td>Exportable CSV/Excel reports: exposure trends, close forecast, AI usage, SLA compliance, audit summary.</td>
+<td>Should</td>
+<td>Analytics</td>
+</tr>
+<tr>
+<td><strong>FR‑17</strong></td>
+<td><strong>Role‑Based UI Rendering</strong></td>
+<td>UI components rendered based on Azure AD group membership; no “security through obscurity”.</td>
+<td>Must</td>
+<td>Security</td>
+</tr>
+<tr>
+<td><strong>FR‑18</strong></td>
+<td><strong>Multi‑Tenant (Agency) Isolation</strong></td>
+<td>Logical separation of agency data via tenant_id; cross‑agency queries prohibited.</td>
+<td>Must</td>
+<td>Compliance</td>
+</tr>
+<tr>
+<td><strong>FR‑19</strong></td>
+<td><strong>Disaster Recovery</strong></td>
+<td>Automated backup to Azure Geo‑Redundant Storage; fail‑over to secondary AKS cluster within 15 min RTO.</td>
+<td>Must</td>
+<td>Ops</td>
+</tr>
+<tr>
+<td><strong>FR‑20</strong></td>
+<td><strong>Performance</strong></td>
+<td>Dashboard latency ≤ 2 sec; AI response ≤ 3 sec; ingestion throughput ≥ 5 k records/min.</td>
+<td>Must</td>
+<td>NFR</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="7-nonfunctional-requirements">7. Non‑Functional Requirements</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Category</th>
+<th>Requirement</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NFR‑1</strong></td>
+<td><strong>Scalability</strong></td>
+<td>Stateless micro‑services (Kotlin SpringBoot) horizontally scalable; auto‑scale based on CPU/queue depth.</td>
+<td>200 TPS baseline, 5× burst</td>
+</tr>
+<tr>
+<td><strong>NFR‑2</strong></td>
+<td><strong>Availability</strong></td>
+<td>99.9 % uptime (MTTR ≤ 15 min). Deploy across 2 Azure zones.</td>
+<td>SLA</td>
+</tr>
+<tr>
+<td><strong>NFR‑3</strong></td>
+<td><strong>Security – Data at Rest</strong></td>
+<td>PostgreSQL encrypted with Azure‑managed keys; Blob storage SSE‑AES256.</td>
+<td>ISO 27001</td>
+</tr>
+<tr>
+<td><strong>NFR‑4</strong></td>
+<td><strong>Security – Data in Transit</strong></td>
+<td>TLS 1.3 with mutual authentication for all service‑to‑service calls.</td>
+<td>PCI‑DSS</td>
+</tr>
+<tr>
+<td><strong>NFR‑5</strong></td>
+<td><strong>Identity &amp; Access Management</strong></td>
+<td>Azure AD OIDC; RBAC enforced at API gateway (Azure API Management).</td>
+<td>Least‑privilege</td>
+</tr>
+<tr>
+<td><strong>NFR‑6</strong></td>
+<td><strong>Compliance</strong></td>
+<td>Support for SOC 2 Type II, GLBA, NAIC Model Law, GDPR (data‑subject rights on synthetic data).</td>
+<td>Auditable</td>
+</tr>
+<tr>
+<td><strong>NFR‑7</strong></td>
+<td><strong>Observability</strong></td>
+<td>OpenTelemetry instrumentation; metrics in Azure Monitor; logs in Log Analytics; alerts on error rate &gt; 1 %.</td>
+<td>Ops</td>
+</tr>
+<tr>
+<td><strong>NFR‑8</strong></td>
+<td><strong>Logging &amp; Auditing</strong></td>
+<td>Immutable append‑only logs with tamper‑evidence (hash chaining). Retention 7 years.</td>
+<td>Compliance</td>
+</tr>
+<tr>
+<td><strong>NFR‑9</strong></td>
+<td><strong>Performance</strong></td>
+<td>End‑to‑end request ≤ 4 sec (including AI call). UI render ≤ 2 sec.</td>
+<td>UX</td>
+</tr>
+<tr>
+<td><strong>NFR‑10</strong></td>
+<td><strong>Maintainability</strong></td>
+<td>Code coverage ≥ 80 % (unit), ≥ 70 % (integration). Follow Clean Architecture, SOLID.</td>
+<td>QA</td>
+</tr>
+<tr>
+<td><strong>NFR‑11</strong></td>
+<td><strong>Portability</strong></td>
+<td>Containerized (Docker) – deployable to AKS, EKS, or on‑prem OpenShift.</td>
+<td>Future‑proof</td>
+</tr>
+<tr>
+<td><strong>NFR‑12</strong></td>
+<td><strong>Disaster Recovery</strong></td>
+<td>RPO ≤ 5 min, RTO ≤ 15 min.</td>
+<td>Ops</td>
+</tr>
+<tr>
+<td><strong>NFR‑13</strong></td>
+<td><strong>Cost Management</strong></td>
+<td>AI token usage ≤ 0.5 USD per 1 k processed records (target).</td>
+<td>Finance</td>
+</tr>
+<tr>
+<td><strong>NFR‑14</strong></td>
+<td><strong>Internationalization</strong></td>
+<td>UI supports EN, ES, FR; dates/number formats locale‑aware.</td>
+<td>Global</td>
+</tr>
+<tr>
+<td><strong>NFR‑15</strong></td>
+<td><strong>Accessibility</strong></td>
+<td>WCAG 2.1 AA compliance for all UI components.</td>
+<td>Legal</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="8-service-level-agreements-slas">8. Service Level Agreements (SLAs)</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Measurement</th>
+<th>Penalty (if any)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ingestion latency</strong></td>
+<td>≤ 5 min from file drop to staging</td>
+<td>Azure Monitor metric <code>ingest_latency_seconds</code></td>
+<td>Service credit 5 %</td>
+</tr>
+<tr>
+<td><strong>Exception classification</strong></td>
+<td>≤ 3 sec per record</td>
+<td>API latency logs</td>
+<td>Service credit 3 %</td>
+</tr>
+<tr>
+<td><strong>Dashboard refresh</strong></td>
+<td>≤ 2 sec after data load</td>
+<td>Front‑end performance logs</td>
+<td>Service credit 2 %</td>
+</tr>
+<tr>
+<td><strong>SLA breach alert</strong></td>
+<td>Notification within 5 min of breach</td>
+<td>Alert rule <code>exception_sla_breach</code></td>
+<td>Service credit 2 %</td>
+</tr>
+<tr>
+<td><strong>AI confidence threshold</strong></td>
+<td>Low‑confidence (&lt; 70 %) flagged for manual review</td>
+<td>AI response metadata</td>
+<td>No penalty (process control)</td>
+</tr>
+<tr>
+<td><strong>System availability</strong></td>
+<td>99.9 % monthly</td>
+<td>Azure Service Health</td>
+<td>Service credit 10 %</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="9-security">9. Security</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Controls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Authentication</strong></td>
+<td>Azure AD OIDC; MFA enforced for all privileged users.</td>
+</tr>
+<tr>
+<td><strong>Authorization</strong></td>
+<td>RBAC matrix stored in Azure AD groups; enforced at API gateway and UI layer.</td>
+</tr>
+<tr>
+<td><strong>Data Encryption</strong></td>
+<td>At‑rest: Azure‑managed keys (CMK) for PostgreSQL &amp; Blob. In‑transit: TLS 1.3 + mutual TLS for service‑to‑service.</td>
+</tr>
+<tr>
+<td><strong>Secret Management</strong></td>
+<td>Azure Key Vault for DB credentials, LLM API keys, service principals.</td>
+</tr>
+<tr>
+<td><strong>Vulnerability Management</strong></td>
+<td>Automated scans (GitHub Dependabot, Trivy, Semgrep) on each PR; quarterly pen‑test.</td>
+</tr>
+<tr>
+<td><strong>Secure Coding</strong></td>
+<td>OWASP Top 10 mitigations; input sanitisation; parameterised queries; CSP headers.</td>
+</tr>
+<tr>
+<td><strong>Least‑Privilege AI</strong></td>
+<td>LLM calls limited to <code>finance-exception</code> prompt template; no retrieval of raw PII.</td>
+</tr>
+<tr>
+<td><strong>Audit Logging</strong></td>
+<td>Immutable log chain (hash of previous entry) stored in Azure Log Analytics; retention 7 years.</td>
+</tr>
+<tr>
+<td><strong>Incident Response</strong></td>
+<td>Playbook in Azure Sentinel; 24‑hour initial response SLA.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="10-compliance">10. Compliance</h2>
+<p>| Regulation | How the system complies |<br>
+|</p>

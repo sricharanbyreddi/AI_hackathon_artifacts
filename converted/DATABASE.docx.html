@@ -1,0 +1,410 @@
+<p>DATABASE</p>
+<h2 id="spendid-project-enterprise-database-design-finance-operations-commandcenter"><strong>Spendid Project – Enterprise Database Design (Finance Operations Command‑Center)</strong></h2>
+<blockquote>
+<p><strong>Audience:</strong> Enterprise Architects, Data‑Engineers, Security &amp; Compliance leads, Development teams<br>
+<strong>Scope:</strong> Core relational data store for the <strong>Brokerage Finance Operations Command Center</strong> (BFOCC). All data is <strong>synthetic</strong> – no real customer, policy, payment or credential data is used.  </p>
+</blockquote>
+<hr>
+<h3 id="1-design-principles-governance">1️⃣  Design Principles &amp; Governance</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Principle</th>
+<th>How it is realised in the design</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Security‑by‑Design</strong></td>
+<td>Row‑Level Security (RLS) policies, least‑privilege roles, encrypted columns for PII‑like identifiers (even synthetic), audit columns, immutable audit log.</td>
+</tr>
+<tr>
+<td><strong>Compliance</strong></td>
+<td>Supports SOX, GDPR‑like data‑subject rights (right to delete/rectify synthetic records), PCI‑DSS‑style segregation of duties (SoD) via role‑based access.</td>
+</tr>
+<tr>
+<td><strong>Scalability</strong></td>
+<td>Partitioning (range on <code>transaction_date</code>), sharding‑ready primary keys (UUIDv7), index‑only scans, materialised views for heavy analytics.</td>
+</tr>
+<tr>
+<td><strong>Auditability &amp; Traceability</strong></td>
+<td><code>audit_log</code> table captures every DML change (trigger‑based), <code>exception_history</code> tracks classification changes, <code>copilot_interaction</code> logs AI prompts &amp; responses.</td>
+</tr>
+<tr>
+<td><strong>Governance</strong></td>
+<td>Naming conventions, version‑controlled DDL (Git), change‑management via CI/CD pipelines, data‑dictionary stored in <code>metadata.tables</code> &amp; <code>metadata.columns</code>.</td>
+</tr>
+<tr>
+<td><strong>Performance</strong></td>
+<td>Composite and partial indexes, covering indexes for dashboard queries, connection‑pool sizing, query‑plan hints where needed.</td>
+</tr>
+<tr>
+<td><strong>Resilience</strong></td>
+<td>Write‑ahead logging (WAL) defaults, hot‑standby replicas, logical replication for analytics DB.</td>
+</tr>
+<tr>
+<td><strong>Cost‑Efficiency</strong></td>
+<td>Use of <code>jsonb</code> only for extensible “payload” fields; most data is normalized to avoid duplication.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2 id="2-logical-data-model">2️⃣  Logical Data Model</h2>
+<blockquote>
+<p><strong>Notation:</strong> Entity (PK) – attributes (type) – relationships (cardinality).  </p>
+</blockquote>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Primary Key</th>
+<th>Core Attributes (type)</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agency</strong></td>
+<td><code>agency_id</code> (UUID)</td>
+<td><code>name</code> (varchar), <code>legal_entity</code> (varchar), <code>status</code> (enum: ACTIVE, INACTIVE), <code>created_at</code> (timestamptz)</td>
+<td>Acquired brokerage agencies.</td>
+</tr>
+<tr>
+<td><strong>Carrier</strong></td>
+<td><code>carrier_id</code> (UUID)</td>
+<td><code>name</code>, <code>type</code> (enum: INSURER, REINSURER), <code>settlement_cutoff</code> (time), <code>created_at</code></td>
+<td>Insurance carriers that issue statements.</td>
+</tr>
+<tr>
+<td><strong>Policy</strong></td>
+<td><code>policy_id</code> (UUID)</td>
+<td><code>policy_number</code> (varchar), <code>agency_id</code> (FK), <code>carrier_id</code> (FK), <code>effective_date</code>, <code>expiration_date</code>, <code>premium_amount</code> (numeric), <code>status</code> (enum)</td>
+<td>Insurance contracts.</td>
+</tr>
+<tr>
+<td><strong>Transaction</strong></td>
+<td><code>transaction_id</code> (UUID)</td>
+<td><code>policy_id</code> (FK), <code>type</code> (enum: RECEIPT, PAYMENT, COMMISSION, ADJUSTMENT), <code>direction</code> (enum: IN, OUT), <code>amount</code> (numeric), <code>currency</code> (char(3)), <code>transaction_date</code> (date), <code>source_system</code> (varchar)</td>
+<td>All monetary movements.</td>
+</tr>
+<tr>
+<td><strong>Receipt</strong></td>
+<td><code>receipt_id</code> (UUID)</td>
+<td><code>transaction_id</code> (FK), <code>lockbox_file_name</code> (varchar), <code>is_applied</code> (bool), <code>applied_to_transaction_id</code> (FK nullable), <code>received_at</code> (timestamptz)</td>
+<td>Cash received via lockbox.</td>
+</tr>
+<tr>
+<td><strong>CarrierStatement</strong></td>
+<td><code>statement_id</code> (UUID)</td>
+<td><code>carrier_id</code> (FK), <code>statement_date</code> (date), <code>file_name</code> (varchar), <code>received_at</code> (timestamptz), <code>processed</code> (bool)</td>
+<td>Monthly carrier premium statements.</td>
+</tr>
+<tr>
+<td><strong>CommissionRule</strong></td>
+<td><code>rule_id</code> (UUID)</td>
+<td><code>carrier_id</code> (FK), <code>producer_id</code> (FK), <code>rule_type</code> (enum: PERCENTAGE, FIXED), <code>value</code> (numeric), <code>effective_from</code>, <code>effective_to</code> (date), <code>is_active</code> (bool)</td>
+<td>Governs commission calculations.</td>
+</tr>
+<tr>
+<td><strong>Commission</strong></td>
+<td><code>commission_id</code> (UUID)</td>
+<td><code>transaction_id</code> (FK), <code>rule_id</code> (FK), <code>producer_id</code> (FK), <code>amount</code> (numeric), <code>status</code> (enum: PENDING, APPROVED, PAID), <code>calculated_at</code> (timestamptz)</td>
+<td>Commission payouts.</td>
+</tr>
+<tr>
+<td><strong>Producer</strong></td>
+<td><code>producer_id</code> (UUID)</td>
+<td><code>name</code>, <code>agency_id</code> (FK), <code>role</code> (enum: AGENT, MANAGER), <code>status</code> (enum)</td>
+<td>Individuals earning commissions.</td>
+</tr>
+<tr>
+<td><strong>FinanceJourney</strong></td>
+<td><code>journey_id</code> (UUID)</td>
+<td><code>name</code> (enum: CASH_TO_CARRIER, AGENCY_BILL, DIRECT_BILL, AR, PAYABLES, COMPENSATION, MONTH_END), <code>description</code>, <code>sla_hours</code> (int)</td>
+<td>Logical finance process stages.</td>
+</tr>
+<tr>
+<td><strong>Control</strong></td>
+<td><code>control_id</code> (UUID)</td>
+<td><code>journey_id</code> (FK), <code>name</code>, <code>owner_role</code> (enum), <code>cutoff_time</code> (time), <code>sla_hours</code> (int), <code>is_mandatory</code> (bool)</td>
+<td>Controls &amp; checkpoints inside a journey.</td>
+</tr>
+<tr>
+<td><strong>Exception</strong></td>
+<td><code>exception_id</code> (UUID)</td>
+<td><code>journey_id</code> (FK), <code>control_id</code> (FK), <code>transaction_id</code> (FK nullable), <code>type</code> (enum), <code>severity</code> (enum: LOW, MEDIUM, HIGH, CRITICAL), <code>materiality_amount</code> (numeric), <code>detected_at</code> (timestamptz), <code>status</code> (enum: OPEN, IN_PROGRESS, RESOLVED, CLOSED)</td>
+<td>Finance‑exception records.</td>
+</tr>
+<tr>
+<td><strong>ExceptionClassification</strong></td>
+<td><code>classification_id</code> (UUID)</td>
+<td><code>exception_id</code> (FK), <code>ai_model</code> (varchar), <code>predicted_cause</code> (varchar), <code>confidence</code> (numeric), <code>explanation</code> (text), <code>created_at</code> (timestamptz)</td>
+<td>AI‑generated classification.</td>
+</tr>
+<tr>
+<td><strong>User</strong></td>
+<td><code>user_id</code> (UUID)</td>
+<td><code>username</code>, <code>email</code>, <code>hashed_pwd</code>, <code>role_id</code> (FK), <code>is_active</code> (bool), <code>created_at</code></td>
+<td>System users.</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td><code>role_id</code> (UUID)</td>
+<td><code>name</code> (enum: CFO, CONTROLLER, FIN_OPS, ACCOUNTING_MGR, TREASURY, SHARED_SERVICES, AGENT, AUDITOR), <code>description</code></td>
+<td>RBAC roles.</td>
+</tr>
+<tr>
+<td><strong>AuditLog</strong></td>
+<td><code>audit_id</code> (BIGSERIAL)</td>
+<td><code>table_name</code>, <code>record_pk</code>, <code>operation</code> (enum: INSERT, UPDATE, DELETE), <code>changed_by</code> (FK → User), <code>changed_at</code> (timestamptz), <code>old_data</code> (jsonb), <code>new_data</code> (jsonb)</td>
+<td>Immutable change log.</td>
+</tr>
+<tr>
+<td><strong>CopilotInteraction</strong></td>
+<td><code>interaction_id</code> (UUID)</td>
+<td><code>user_id</code> (FK), <code>prompt</code> (text), <code>model_name</code> (varchar), <code>response</code> (jsonb), <code>confidence</code> (numeric), <code>latency_ms</code> (int), <code>created_at</code> (timestamptz)</td>
+<td>Conversational AI usage.</td>
+</tr>
+<tr>
+<td><strong>Metadata.Table</strong></td>
+<td><code>table_id</code> (SERIAL)</td>
+<td><code>schema_name</code>, <code>table_name</code>, <code>description</code></td>
+<td>Data‑dictionary meta‑store.</td>
+</tr>
+<tr>
+<td><strong>Metadata.Column</strong></td>
+<td><code>column_id</code> (SERIAL)</td>
+<td><code>table_id</code> (FK), <code>column_name</code>, <code>data_type</code>, <code>is_nullable</code>, <code>description</code></td>
+<td>Data‑dictionary meta‑store.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Key Relationships (cardinality)</strong>  </p>
+<ul>
+<li><strong>Agency</strong> 1‑* <strong>Policy</strong>  </li>
+<li><strong>Carrier</strong> 1‑* <strong>Policy</strong>  </li>
+<li><strong>Policy</strong> 1‑* <strong>Transaction</strong>  </li>
+<li><strong>Transaction</strong> 1‑1 <strong>Receipt</strong> (optional)  </li>
+<li><strong>Transaction</strong> 1‑1 <strong>Commission</strong> (optional)  </li>
+<li><strong>Carrier</strong> 1‑* <strong>CarrierStatement</strong>  </li>
+<li><strong>Producer</strong> *‑* <strong>CommissionRule</strong> (via <code>producer_id</code> in rule)  </li>
+<li><strong>FinanceJourney</strong> 1‑* <strong>Control</strong>  </li>
+<li><strong>Control</strong> 1‑* <strong>Exception</strong>  </li>
+<li><strong>Exception</strong> 1‑1 <strong>ExceptionClassification</strong> (optional)  </li>
+<li><strong>User</strong> *‑* <strong>Role</strong> (many‑to‑many via <code>user_role</code> bridge – omitted for brevity, but present in physical model).  </li>
+</ul>
+<hr>
+<h2 id="3-physical-data-model-postgresql">3️⃣  Physical Data Model (PostgreSQL)</h2>
+<h3 id="31-naming-conventions">3.1  Naming Conventions</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Convention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tables</td>
+<td>snake_case, plural (<code>agency</code>, <code>policy</code>, <code>transaction</code>)</td>
+</tr>
+<tr>
+<td>PK columns</td>
+<td><code>&lt;table&gt;_id</code></td>
+</tr>
+<tr>
+<td>FK columns</td>
+<td><code>&lt;referenced_table&gt;_id</code></td>
+</tr>
+<tr>
+<td>Enums</td>
+<td><code>enum_&lt;entity&gt;_&lt;attribute&gt;</code></td>
+</tr>
+<tr>
+<td>Auditable columns</td>
+<td><code>created_at</code>, <code>created_by</code>, <code>updated_at</code>, <code>updated_by</code></td>
+</tr>
+<tr>
+<td>Soft‑delete flag</td>
+<td><code>is_deleted</code> (bool) – not used for core finance tables (hard delete via audit).</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-ddl-postgresql-15">3.2  DDL (PostgreSQL 15)</h3>
+<pre><code class="language-sql">-- ==========================================================
+-- 1. ENUM Types
+-- ==========================================================
+CREATE TYPE enum_agency_status AS ENUM (&#x27;ACTIVE&#x27;,&#x27;INACTIVE&#x27;);
+CREATE TYPE enum_policy_status AS ENUM (&#x27;ACTIVE&#x27;,&#x27;LAPSED&#x27;,&#x27;CANCELLED&#x27;,&#x27;EXPIRED&#x27;);
+CREATE TYPE enum_tx_type AS ENUM (&#x27;RECEIPT&#x27;,&#x27;PAYMENT&#x27;,&#x27;COMMISSION&#x27;,&#x27;ADJUSTMENT&#x27;);
+CREATE TYPE enum_tx_direction AS ENUM (&#x27;IN&#x27;,&#x27;OUT&#x27;);
+CREATE TYPE enum_rule_type AS ENUM (&#x27;PERCENTAGE&#x27;,&#x27;FIXED&#x27;);
+CREATE TYPE enum_commission_status AS ENUM (&#x27;PENDING&#x27;,&#x27;APPROVED&#x27;,&#x27;PAID&#x27;);
+CREATE TYPE enum_journey_name AS ENUM (
+    &#x27;CASH_TO_CARRIER&#x27;,&#x27;AGENCY_BILL&#x27;,&#x27;DIRECT_BILL&#x27;,&#x27;AR&#x27;,&#x27;PAYABLES&#x27;,&#x27;COMPENSATION&#x27;,&#x27;MONTH_END&#x27;
+);
+CREATE TYPE enum_severity AS ENUM (&#x27;LOW&#x27;,&#x27;MEDIUM&#x27;,&#x27;HIGH&#x27;,&#x27;CRITICAL&#x27;);
+CREATE TYPE enum_exception_type AS ENUM (&#x27;UNAPPLIED_CASH&#x27;,&#x27;MISSING_STATEMENT&#x27;,&#x27;COMMISSION_SPLIT&#x27;,&#x27;AGEING&#x27;,&#x27;DUPLICATE_TX&#x27;,&#x27;LATE_GL&#x27;,&#x27;TECH_ALERT&#x27;);
+CREATE TYPE enum_exception_status AS ENUM (&#x27;OPEN&#x27;,&#x27;IN_PROGRESS&#x27;,&#x27;RESOLVED&#x27;,&#x27;CLOSED&#x27;);
+CREATE TYPE enum_operation AS ENUM (&#x27;INSERT&#x27;,&#x27;UPDATE&#x27;,&#x27;DELETE&#x27;);
+CREATE TYPE enum_user_role AS ENUM (&#x27;CFO&#x27;,&#x27;CONTROLLER&#x27;,&#x27;FIN_OPS&#x27;,&#x27;ACCOUNTING_MGR&#x27;,&#x27;TREASURY&#x27;,&#x27;SHARED_SERVICES&#x27;,&#x27;AGENT&#x27;,&#x27;AUDITOR&#x27;);
+
+-- ==========================================================
+-- 2. Core Tables
+-- ==========================================================
+CREATE TABLE agency (
+    agency_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name               VARCHAR(200) NOT NULL,
+    legal_entity       VARCHAR(200),
+    status             enum_agency_status NOT NULL DEFAULT &#x27;ACTIVE&#x27;,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_agency_name UNIQUE (name)
+);
+
+CREATE TABLE carrier (
+    carrier_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name               VARCHAR(200) NOT NULL,
+    type               VARCHAR(50) NOT NULL,
+    settlement_cutoff  TIME NOT NULL,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_carrier_name UNIQUE (name)
+);
+
+CREATE TABLE producer (
+    producer_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name               VARCHAR(200) NOT NULL,
+    agency_id          UUID NOT NULL REFERENCES agency(agency_id) ON DELETE RESTRICT,
+    role               VARCHAR(50) NOT NULL,
+    status             enum_agency_status NOT NULL DEFAULT &#x27;ACTIVE&#x27;,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID
+);
+
+CREATE TABLE policy (
+    policy_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    policy_number      VARCHAR(50) NOT NULL,
+    agency_id          UUID NOT NULL REFERENCES agency(agency_id) ON DELETE RESTRICT,
+    carrier_id         UUID NOT NULL REFERENCES carrier(carrier_id) ON DELETE RESTRICT,
+    effective_date     DATE NOT NULL,
+    expiration_date    DATE NOT NULL,
+    premium_amount     NUMERIC(15,2) NOT NULL,
+    status             enum_policy_status NOT NULL DEFAULT &#x27;ACTIVE&#x27;,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_policy_number UNIQUE (policy_number)
+);
+
+CREATE TABLE finance_journey (
+    journey_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name               enum_journey_name NOT NULL,
+    description        TEXT,
+    sla_hours          INTEGER NOT NULL,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_journey_name UNIQUE (name)
+);
+
+CREATE TABLE control (
+    control_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    journey_id         UUID NOT NULL REFERENCES finance_journey(journey_id) ON DELETE CASCADE,
+    name               VARCHAR(150) NOT NULL,
+    owner_role         enum_user_role NOT NULL,
+    cutoff_time        TIME,
+    sla_hours          INTEGER,
+    is_mandatory       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_control_name_per_journey UNIQUE (journey_id, name)
+);
+
+CREATE TABLE &quot;transaction&quot; (
+    transaction_id     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    policy_id          UUID NOT NULL REFERENCES policy(policy_id) ON DELETE RESTRICT,
+    type               enum_tx_type NOT NULL,
+    direction          enum_tx_direction NOT NULL,
+    amount             NUMERIC(15,2) NOT NULL CHECK (amount &gt;= 0),
+    currency           CHAR(3) NOT NULL DEFAULT &#x27;USD&#x27;,
+    transaction_date   DATE NOT NULL,
+    source_system      VARCHAR(100),
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID
+);
+
+CREATE TABLE receipt (
+    receipt_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id     UUID NOT NULL REFERENCES &quot;transaction&quot;(transaction_id) ON DELETE RESTRICT,
+    lockbox_file_name  VARCHAR(200) NOT NULL,
+    is_applied         BOOLEAN NOT NULL DEFAULT FALSE,
+    applied_to_tx_id   UUID REFERENCES &quot;transaction&quot;(transaction_id),
+    received_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT ck_receipt_applied CHECK (
+        (is_applied = FALSE AND applied_to_tx_id IS NULL) OR
+        (is_applied = TRUE  AND applied_to_tx_id IS NOT NULL)
+    )
+);
+
+CREATE TABLE carrier_statement (
+    statement_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    carrier_id         UUID NOT NULL REFERENCES carrier(carrier_id) ON DELETE RESTRICT,
+    statement_date     DATE NOT NULL,
+    file_name          VARCHAR(200) NOT NULL,
+    received_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    processed          BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_statement_per_carrier_date UNIQUE (carrier_id, statement_date)
+);
+
+CREATE TABLE commission_rule (
+    rule_id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    carrier_id         UUID NOT NULL REFERENCES carrier(carrier_id) ON DELETE RESTRICT,
+    producer_id        UUID NOT NULL REFERENCES producer(producer_id) ON DELETE RESTRICT,
+    rule_type          enum_rule_type NOT NULL,
+    value              NUMERIC(10,4) NOT NULL CHECK (value &gt;= 0),
+    effective_from     DATE NOT NULL,
+    effective_to       DATE,
+    is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID,
+    CONSTRAINT uq_rule_per_producer UNIQUE (carrier_id, producer_id, effective_from)
+);
+
+CREATE TABLE commission (
+    commission_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id     UUID NOT NULL REFERENCES &quot;transaction&quot;(transaction_id) ON DELETE RESTRICT,
+    rule_id            UUID NOT NULL REFERENCES commission_rule(rule_id) ON DELETE RESTRICT,
+    producer_id        UUID NOT NULL REFERENCES producer(producer_id) ON DELETE RESTRICT,
+    amount             NUMERIC(15,2) NOT NULL CHECK (amount &gt;= 0),
+    status             enum_commission_status NOT NULL DEFAULT &#x27;PENDING&#x27;,
+    calculated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by         UUID NOT NULL,
+    updated_at         TIMESTAMPTZ,
+    updated_by         UUID
+);
+
+CREATE TABLE</code></pre>
