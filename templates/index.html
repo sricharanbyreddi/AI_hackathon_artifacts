@@ -3,38 +3,88 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Solution Showcase</title>
+  <meta name="theme-color" content="#10152b">
+  <title>AI Solution Showcase | Client Workspace</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark.min.css">
 </head>
 <body>
+<div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
 <header class="topbar">
-  <div class="brand"><div class="brand-icon">AI</div><div><h1>Solution Showcase</h1><p>Client Presentation Workspace</p></div></div>
-  <div class="status"><span class="status-dot"></span> Document Library</div>
+  <a class="brand" href="/" aria-label="AI Solution Showcase home">
+    <span class="brand-icon"><span>AI</span><i></i></span>
+    <span class="brand-copy"><strong>Solution<span>Showcase</span></strong><small>CLIENT PRESENTATION WORKSPACE</small></span>
+  </a>
+  <div class="topbar-right">
+    <span class="live-status"><span class="status-dot"></span> DOCUMENT LIBRARY</span>
+  </div>
 </header>
-<main class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-heading"><h2>Documents</h2><span class="count">{{ documents|length }}</span></div>
-    <p class="sidebar-description">Select a document to explore its contents.</p>
-    <div class="document-list">
-    {% for doc in documents %}
-      <button type="button" class="document-button" data-id="{{ doc.id }}" title="{{ doc.filename }}">
-        <span class="file-icon">{% if doc.filename.lower().endswith('.pdf') %}PDF{% elif doc.filename.lower().endswith('.docx') %}DOC{% elif doc.filename.lower().endswith(('.md', '.markdown')) %}MD{% else %}TXT{% endif %}</span>
-        <span class="file-name">{{ doc.name }}</span><span class="arrow">›</span>
-      </button>
-    {% endfor %}
+
+<main class="main-page">
+  <section class="page-intro">
+    <div class="section-kicker"><span class="kicker-line"></span> CLIENT PRESENTATION WORKSPACE</div>
+    <h1>Explore the <span>solution.</span></h1>
+    <p>Choose a document to view its full, formatted content.</p>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading">
+      <div>
+        <div class="section-kicker">THE PROJECT LIBRARY</div>
+        <h2>Explore the solution</h2>
+        <p>Select a document to open its formatted content below.</p>
+      </div>
+      <div class="library-stats"><span class="stats-number">{{ documents|length }}</span><span><b>Documents</b><small>Ready to explore</small></span></div>
     </div>
-    {% if not documents %}<div class="empty-sidebar"><p>No supported documents found.</p><p>Add PDF, DOCX, MD, Markdown, or TXT files to <code>uploads</code>, then refresh.</p></div>{% endif %}
-  </aside>
-  <section class="viewer">
-    <div class="viewer-toolbar"><div><p class="eyebrow">DOCUMENT PREVIEW</p><h2 id="document-title">Welcome to the Showcase</h2></div><span id="document-type" class="document-type">READY</span></div>
-    <div id="welcome" class="welcome"><div class="welcome-icon">✦</div><h2>Your solution, all in one place.</h2><p>Choose a document from the left panel to view its formatted contents here.</p></div>
-    <div id="loading" class="loading" hidden>Loading document…</div>
+
+    <div class="library-controls">
+      <label class="search-box"><span class="search-symbol">⌕</span><input id="document-search" type="search" placeholder="Search documents..." autocomplete="off" aria-label="Search documents"><kbd>⌕</kbd></label>
+      <div class="filter-group" role="group" aria-label="Filter documents">
+        <button class="filter-chip active" type="button" data-filter="all">All files</button>
+        <button class="filter-chip" type="button" data-filter="doc">DOCX</button>
+        <button class="filter-chip" type="button" data-filter="pdf">PDF</button>
+        <button class="filter-chip" type="button" data-filter="other">Other</button>
+      </div>
+    </div>
+
+    {% if documents %}
+    <div class="document-grid" id="document-grid">
+      {% for doc in documents %}
+      <button type="button" class="document-button" data-id="{{ doc.id }}" data-name="{{ doc.name|lower }}" data-kind="{% if doc.filename.lower().endswith('.pdf') %}pdf{% elif doc.filename.lower().endswith('.docx') %}doc{% else %}other{% endif %}" title="{{ doc.filename }}">
+        <span class="doc-card-top">
+          <span class="file-icon">{% if doc.filename.lower().endswith('.pdf') %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M9 13h6M9 16h6"/></svg>{% elif doc.filename.lower().endswith('.docx') %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M9 12l1.2 5 1.8-3.5 1.8 3.5L15 12"/></svg>{% else %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M9 13h6M9 16h4"/></svg>{% endif %}</span>
+          <span class="doc-card-arrow">↗</span>
+        </span>
+        <span class="file-name">{{ doc.name }}</span>
+        <span class="doc-card-bottom"><span class="file-type-label">{% if doc.filename.lower().endswith('.pdf') %}PDF DOCUMENT{% elif doc.filename.lower().endswith('.docx') %}WORD DOCUMENT{% elif doc.filename.lower().endswith(('.md', '.markdown')) %}MARKDOWN{% else %}TEXT DOCUMENT{% endif %}</span><span class="open-text">Open preview <span>→</span></span></span>
+      </button>
+      {% endfor %}
+    </div>
+    <div id="no-search-results" class="no-search-results" hidden>No documents match your search. Try a different name or file type.</div>
+    {% else %}
+    <div class="empty-library"><h3>Your library is ready for its first document</h3><p>Add PDF, DOCX, Markdown, or TXT files to the <code>uploads</code> folder and refresh this page.</p></div>
+    {% endif %}
+  </section>
+
+  <section class="viewer" id="document-viewer">
+    <div class="viewer-toolbar">
+      <div class="viewer-heading"><span class="viewer-icon">✧</span><div><div class="section-kicker">LIVE DOCUMENT VIEW</div><h2 id="document-title">Your preview starts here</h2></div></div>
+      <span id="document-type" class="document-type"><span class="type-dot"></span> READY</span>
+    </div>
+    <div id="welcome" class="welcome">
+      <div class="welcome-illustration"><span class="welcome-sheet sheet-back"></span><span class="welcome-sheet sheet-front"><i></i><i></i><i></i><b>✦</b></span></div>
+      <h3>A closer look, one click away.</h3>
+      <p>Choose any document above to explore its content with clean formatting, readable code, tables, and diagrams.</p>
+      <span class="welcome-hint">SELECT A DOCUMENT TO BEGIN <span>↓</span></span>
+    </div>
+    <div id="loading" class="loading" hidden><span class="loading-spinner"></span><span>Preparing your document preview…</span></div>
     <div id="error-message" class="error-message" hidden>Unable to load this document. Please check the server.</div>
     <article id="document-content" hidden></article>
   </section>
+
 </main>
-<footer>AI Solution Showcase <span>·</span> Local Preview</footer>
+<footer><span class="footer-brand">✦ Solution Showcase</span><span>CLIENT PRESENTATION WORKSPACE</span><span>LOCAL PREVIEW</span></footer>
+
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>

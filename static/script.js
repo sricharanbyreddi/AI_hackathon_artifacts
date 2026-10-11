@@ -1,17 +1,21 @@
 function normalizeMermaidSource(raw) {
-  // Word documents often contain typographic quotes that Mermaid treats as syntax.
   let source = (raw || "")
-    .replace(/\\r/g, "")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/[‐‑‒–—]/g, "-")
+    .replace(/\r/g, "")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[‐‑‒–—―−]/g, "-")
+    .replace(/\u00a0/g, " ")
     .trim();
 
-  // Mermaid node labels containing quotes should use normal ASCII quotes.
-  // Strip accidental Markdown fence remnants if a document exporter included them.
-  source = source.replace(/^\\s*```(?:mermaid)?\\s*/i, "")
-                 .replace(/\\s*```\\s*$/, "");
-  return source;
+  // Word-exported Mermaid often includes a theme directive that causes failures
+  // in browser-rendered previews. Use the app's shared Mermaid theme instead.
+  source = source.replace(/^\s*%%\{init:[\s\S]*?\}%%\s*/i, "");
+  source = source.replace(/^\s*```(?:mermaid)?\s*/i, "")
+                 .replace(/\s*```\s*$/, "");
+
+  // Replace invisible control characters sometimes introduced by DOCX copy/paste.
+  source = source.replace(/[\u200B-\u200D\uFEFF]/g, "");
+  return source.trim();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,8 +28,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorMessage = document.getElementById("error-message");
   let currentRequest = 0;
 
+  const searchInput = document.getElementById("document-search");
+  const filterButtons = document.querySelectorAll(".filter-chip");
+  const noSearchResults = document.getElementById("no-search-results");
+  let activeFilter = "all";
+
+  function filterDocumentCards() {
+    const query = (searchInput?.value || "").trim().toLowerCase();
+    let visibleCount = 0;
+    buttons.forEach((button) => {
+      const matchesName = (button.dataset.name || button.querySelector(".file-name").textContent.toLowerCase()).includes(query);
+      const matchesType = activeFilter === "all" || button.dataset.kind === activeFilter;
+      const visible = matchesName && matchesType;
+      button.hidden = !visible;
+      if (visible) visibleCount++;
+    });
+    if (noSearchResults) noSearchResults.hidden = visibleCount !== 0;
+  }
+
+  if (searchInput) searchInput.addEventListener("input", filterDocumentCards);
+  filterButtons.forEach((filterButton) => {
+    filterButton.addEventListener("click", () => {
+      activeFilter = filterButton.dataset.filter || "all";
+      filterButtons.forEach((button) => button.classList.toggle("active", button === filterButton));
+      filterDocumentCards();
+    });
+  });
+
+
   if (window.mermaid) {
-    mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "strict", suppressErrorRendering: true });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "neutral",
+      securityLevel: "strict",
+      suppressErrorRendering: true,
+      flowchart: { htmlLabels: false, curve: "basis" },
+      sequence: { useMaxWidth: true },
+      themeVariables: {
+        fontFamily: "Inter, Segoe UI, Arial, sans-serif",
+        primaryColor: "#eef2ff",
+        primaryTextColor: "#172554",
+        primaryBorderColor: "#818cf8",
+        lineColor: "#64748b",
+        secondaryColor: "#f0fdfa",
+        tertiaryColor: "#f8fafc"
+      }
+    });
   }
 
   buttons.forEach((button) => {
@@ -48,6 +96,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (requestId !== currentRequest) return;
         content.innerHTML = htmlContent;
         content.hidden = false;
+        // Hide the welcome/loader state first, then bring the preview into view on every screen size.
+        welcome.hidden = true;
+        loading.hidden = true;
+        requestAnimationFrame(() => {
+          document.getElementById("document-viewer").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+        });
         if (window.hljs) {
           content.querySelectorAll("pre code").forEach((block) => {
             try { window.hljs.highlightElement(block); } catch (e) { /* plain code remains readable */ }
