@@ -1,28 +1,36 @@
-# AI Solution Showcase
+# AI Solution Showcase — clean rebuild
 
-## Run
-1. Open this folder in VS Code.
-2. Create/activate a virtual environment if desired.
-3. Install dependencies: `python -m pip install -r requirements.txt`
-4. Copy `.pdf`, `.docx`, `.md`, `.markdown`, or `.txt` documents into `uploads/`.
-5. Start: `python app.py`
-6. Visit http://127.0.0.1:5000
+This rebuild keeps the existing Flask document-library UI and replaces the fragile DOCX conversion path with a structured converter based on Word paragraphs, runs, numbering, tables, and embedded image relationships.
 
-## Conversion approach
-Markdown source embedded in DOCX paragraphs is parsed as Markdown. Markdown tables, fenced code blocks, lists, headings, quotes and Mermaid fences are preserved. Native Word tables are rendered as HTML tables. The converter deliberately does not guess/rewrite code or Mermaid syntax because heuristic rewriting can corrupt valid source. If a Mermaid diagram still fails, the underlying Mermaid source itself may be invalid and is shown in the preview fallback.
+## Run locally
 
+1. Extract this folder into a new directory. Do not extract over your existing project.
+2. Open the folder in VS Code.
+3. (Recommended) Create a virtual environment:
+   - Windows: `py -m venv .venv`
+   - Activate: `.venv\\Scripts\\activate`
+4. Install dependencies: `python -m pip install -r requirements.txt`
+5. Start the app: `python app.py`
+6. Open `http://127.0.0.1:5000`.
 
-## Client presentation UI (v9)
-The main page uses a full-width hero, searchable document cards, file-type filters, and a document preview panel. Start with `python app.py` and open `http://127.0.0.1:5000/`.
+## Documents and recovery
 
+- `uploads/` contains the active documents displayed by the app. The latest supplied Architecture, Code, and Traceability documents are installed as `ARCHITECTURE.docx`, `CODE.docx`, and `TRACEABILITY.docx`.
+- `original_documents/` contains unchanged copies of the three source files named `updated_*.docx` for recovery/reference. Do not delete these until you have checked the preview.
+- Add new supported documents (`.docx`, `.pdf`, `.md`, `.markdown`, `.txt`) to `uploads/` and refresh the app.
+- `converted/` is generated output. It can be cleared safely; the app rebuilds it from `uploads/` on each request.
 
-## UI fix v11
-The HTML `hidden` attribute is now enforced in CSS, so the welcome placeholder disappears when a document is opened. Selecting a document smoothly scrolls to the document preview on desktop and mobile.
+## Conversion behavior
 
+- Word heading styles map to matching HTML heading levels.
+- Bold, italic, underline, and inline monospace runs are retained.
+- Word numbered/bulleted lists and manually typed list markers are rendered as lists.
+- Native Word tables retain inline formatting in cells and scroll horizontally when wide.
+- Embedded images/diagrams are emitted as responsive figures using self-contained data URIs.
+- Code samples are grouped conservatively. Unusual code formatting may still depend on how the source Word document represents the code.
+- Markdown fences, tables, lists, and Mermaid source are supported; Mermaid is rendered in the browser when its CDN is available.
 
-## Mermaid rendering fix (v12)
-The client renderer normalizes typographic punctuation from Word and strips embedded Mermaid theme-init directives that can break rendering. Diagrams use a shared theme and responsive SVG styles.
+## Troubleshooting
 
-
-## Mermaid auto-repair (v13)
-When a diagram fails on the first render, the UI retries after normalizing whitespace and quoting subgraph/node labels, then displays the actual render error with source if both attempts fail.
+- If styles appear stale, stop Flask (`Ctrl+C`), restart `python app.py`, then hard-refresh the browser (`Ctrl+F5`).
+- If a document fails, check the terminal for the conversion error. Keep `original_documents/` unchanged while debugging.

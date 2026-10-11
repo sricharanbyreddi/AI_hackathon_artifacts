@@ -133,3 +133,35 @@ footer{padding-top:18px}
 #document-content details.diagram-source-fallback pre {
   margin-top: 12px;
 }
+
+/* Stable document rendering layer: preserve structure without overriding content semantics. */
+#document-content{width:100%;max-width:100%;min-width:0;overflow-x:hidden;line-height:1.75;font-size:15px;color:#263451}
+#document-content h1,#document-content h2,#document-content h3,#document-content h4,#document-content h5,#document-content h6{font-weight:700;line-height:1.3;letter-spacing:-.02em;overflow-wrap:anywhere}
+#document-content h1{font-size:clamp(27px,2.4vw,34px);color:#17254a;margin:0 0 24px;padding-bottom:14px;border-bottom:1px solid #e5e8f2}
+#document-content h2{font-size:clamp(22px,2vw,27px);color:#263a70;margin:34px 0 15px;padding-bottom:8px;border-bottom:1px solid #edf0f7}
+#document-content h3,#document-content h3.document-subheading{font-size:clamp(19px,1.8vw,24px);font-weight:800;color:#5b4be7;margin:27px 0 12px;line-height:1.35}
+#document-content h4{font-size:17px;color:#33466f;margin:22px 0 10px}
+#document-content p{margin:12px 0;overflow-wrap:anywhere}
+#document-content strong,#document-content b{font-weight:700;color:#202d4b}
+#document-content em,#document-content i{font-style:italic}
+#document-content u{text-decoration:underline;text-underline-offset:3px}
+#document-content ul,#document-content ol{margin:12px 0 22px;padding-left:30px}
+#document-content li{padding-left:4px;margin:7px 0;line-height:1.65}
+#document-content .table-wrapper{width:100%;max-width:100%;overflow-x:auto;margin:18px 0 25px;border:1px solid #e0e5f0;border-radius:8px}
+#document-content table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px;line-height:1.55;background:#fff}
+#document-content th,#document-content td{border:1px solid #e0e5f0;padding:10px 12px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+#document-content th{background:#f0efff;color:#2e2a70;font-weight:700}
+#document-content tr:nth-child(even) td{background:#fafbff}
+#document-content td p,#document-content th p{margin:2px 0}
+#document-content pre{display:block;max-width:100%;width:100%;overflow-x:auto;white-space:pre;margin:18px 0 25px;padding:20px 22px;background:#101827!important;color:#e6edf8!important;border:1px solid #28344b;border-left:4px solid #7669e8;border-radius:12px;box-shadow:0 8px 24px rgba(16,24,39,.09);tab-size:4}
+#document-content pre code{display:block;min-width:max-content;white-space:pre;overflow-wrap:normal;background:transparent!important;color:inherit!important;font:12.5px/1.75 Consolas,"Cascadia Code","Courier New",monospace}
+#document-content p code,#document-content li code{padding:2px 5px;border-radius:4px;background:#f0f2fa;color:#4d42c7;font: .92em Consolas,"Courier New",monospace}
+#document-content .document-figure{display:block;max-width:100%;margin:22px auto 28px;padding:12px;overflow:auto;text-align:center;background:#fff;border:1px solid #e4e8f2;border-radius:12px}
+#document-content .document-figure img{display:inline-block;max-width:100%;width:auto;height:auto;max-height:78vh;object-fit:contain;vertical-align:middle}
+#document-content .mermaid{width:100%;max-width:100%;overflow-x:auto;text-align:center;margin:22px 0;padding:20px 12px;background:#fff;border:1px solid #e4e8f2;border-radius:12px}
+#document-content .mermaid svg{display:block;max-width:100%;height:auto;margin:auto}
+#document-content blockquote{margin:18px 0;padding:12px 18px;border-left:4px solid #7769e8;background:#f7f7ff;color:#4c5872}
+#document-content hr{border:0;border-top:1px solid #e1e5f0;margin:28px 0}
+#document-content .pdf-page{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e8f2}
+#document-content .page-label{font-size:11px;color:#8790a7;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+@media(max-width:700px){#document-content{padding:20px 16px!important;font-size:14px}#document-content table{font-size:12px}#document-content th,#document-content td{padding:8px}#document-content pre{padding:15px}}

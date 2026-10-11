@@ -18,6 +18,29 @@ function normalizeMermaidSource(raw) {
   return source.trim();
 }
 
+// Mermaid parser recovery for diagrams copied from Word. Quoting labels removes
+// ambiguities caused by slashes, parentheses, punctuation, and non-ASCII dashes.
+function repairMermaidSource(raw) {
+  let source = normalizeMermaidSource(raw)
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join("\n");
+
+  // Quote subgraph labels: subgraph ID[Label with spaces] -> subgraph ID["Label with spaces"]
+  source = source.replace(/^(\s*subgraph\s+[A-Za-z0-9_-]+)\[([^\]\n]+)\]\s*$/gm,
+    (_, prefix, label) => prefix + '["' + label.replace(/"/g, "'") + '"]');
+
+  // Quote common square-bracket node labels unless already quoted or using a special shape.
+  source = source.replace(/^(\s*[A-Za-z][A-Za-z0-9_-]*)\[([^\]\n]+)\](\s*)$/gm,
+    (_, id, label, tail) => {
+      const cleanLabel = label.trim();
+      if (cleanLabel.startsWith('"') && cleanLabel.endsWith('"')) return id + '[' + cleanLabel + ']' + tail;
+      return id + '["' + cleanLabel.replace(/"/g, "'") + '"]' + tail;
+    });
+  return source;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const buttons = document.querySelectorAll(".document-button");
   const title = document.getElementById("document-title");
@@ -126,22 +149,35 @@ document.addEventListener("DOMContentLoaded", () => {
             if (pre) pre.replaceWith(diagram); else code.replaceWith(diagram);
             try {
               await mermaid.run({ nodes: [diagram] });
-              if (diagram.querySelector(".error-icon") ||
-                  /Syntax error in text/i.test(diagram.textContent || "")) {
+              if (diagram.querySelector(".error-icon") || /Syntax error in text/i.test(diagram.textContent || "")) {
                 throw new Error("Mermaid reported a syntax error");
               }
-            } catch (diagramError) {
-              console.error("Mermaid syntax error in " + title.textContent + ":", diagramError, source);
-              const fallback = document.createElement("details");
-              fallback.className = "diagram-source-fallback";
-              const summary = document.createElement("summary");
-              summary.textContent = "Diagram could not render — view source";
-              const preSource = document.createElement("pre");
-              const codeSource = document.createElement("code");
-              codeSource.textContent = source;
-              preSource.appendChild(codeSource);
-              fallback.append(summary, preSource);
-              diagram.replaceWith(fallback);
+            } catch (firstError) {
+              // Retry once with normalized, explicitly quoted labels.
+              const repairedSource = repairMermaidSource(source);
+              try {
+                diagram.removeAttribute("data-processed");
+                diagram.innerHTML = "";
+                diagram.textContent = repairedSource;
+                await mermaid.run({ nodes: [diagram] });
+                if (diagram.querySelector(".error-icon") || /Syntax error in text/i.test(diagram.textContent || "")) {
+                  throw new Error("Mermaid repair attempt failed");
+                }
+              } catch (diagramError) {
+                console.error("Mermaid rendering failed in " + title.textContent + ":", diagramError, repairedSource);
+                const fallback = document.createElement("details");
+                fallback.className = "diagram-source-fallback";
+                const summary = document.createElement("summary");
+                summary.textContent = "Diagram could not render — view source and error";
+                const errorNote = document.createElement("p");
+                errorNote.textContent = String(diagramError && diagramError.message ? diagramError.message : diagramError);
+                const preSource = document.createElement("pre");
+                const codeSource = document.createElement("code");
+                codeSource.textContent = repairedSource;
+                preSource.appendChild(codeSource);
+                fallback.append(summary, errorNote, preSource);
+                diagram.replaceWith(fallback);
+              }
             }
           }
         }
